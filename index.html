@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YOTEI — 日程調整</title>
+  <style>
+    :root {
+      --bg: #F5F5F7;
+      --card: #FFFFFF;
+      --primary: #007AFF;
+      --primary-lt: rgba(0,122,255,0.10);
+      --primary-dk: #005EC5;
+      --c-best:     #5856D6;
+      --c-circle:   #34C759;
+      --c-triangle: #FF9F0A;
+      --c-cross:    #FF3B30;
+      --c-success:  #34C759;
+      --text:       #1D1D1F;
+      --text-sub:   #6E6E73;
+      --border:     #D2D2D7;
+      --r: 14px;
+      --shadow: 0 2px 22px rgba(0,0,0,0.07);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+        "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      height: 52px; padding: 0 18px;
+      position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-size: 17px; font-weight: 800; letter-spacing: 2px; color: var(--primary); }
+    .header-back {
+      border: none; background: none; color: var(--primary);
+      font-size: 15px; font-family: inherit; font-weight: 500;
+      cursor: pointer; padding: 6px 0; display: flex; align-items: center; gap: 4px;
+    }
+    .organizer-badge {
+      font-size: 11px; font-weight: 700;
+      background: rgba(88,86,214,.12); color: var(--c-best);
+      padding: 3px 10px; border-radius: 20px; letter-spacing: .3px;
+    }
+
+    /* Layout */
+    .container { max-width: 720px; margin: 0 auto; padding: 26px 16px 80px; }
+    .card { background: var(--card); border-radius: var(--r); padding: 22px; box-shadow: var(--shadow); margin-bottom: 14px; }
+
+    /* Typography */
+    .page-title { font-size: 26px; font-weight: 700; letter-spacing: -.5px; margin-bottom: 3px; }
+    .page-sub   { font-size: 14px; color: var(--text-sub); margin-bottom: 22px; }
+    .section-label {
+      font-size: 12px; font-weight: 600; letter-spacing: .5px;
+      text-transform: uppercase; color: var(--text-sub); margin-bottom: 10px;
+    }
+
+    /* Forms */
+    .input {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 15px; font-family: inherit; color: var(--text);
+      background: white; transition: border-color .18s; outline: none;
+    }
+    .input:focus { border-color: var(--primary); }
+    .input::placeholder { color: #c0c0c5; }
+    .form-group { margin-bottom: 14px; }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 20px; border-radius: 12px;
+      font-size: 15px; font-weight: 600; font-family: inherit;
+      cursor: pointer; border: none; transition: all .14s;
+    }
+    .btn-full { width: 100%; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dk); }
+    .btn-primary:active { transform: scale(.97); }
+    .btn-ghost  { background: var(--primary-lt); color: var(--primary); }
+    .btn-ghost:hover { background: rgba(0,122,255,.16); }
+    .btn-success { background: var(--c-success); color: #fff; }
+    .btn-success:hover { background: #28a745; }
+    .btn-danger { background: rgba(255,59,48,.09); color: var(--c-cross); }
+    .btn-danger:hover { background: rgba(255,59,48,.17); }
+    .btn-sm { padding: 7px 13px; font-size: 13px; border-radius: 8px; }
+    .btn-xs { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
+    .btn-confirm { background: linear-gradient(135deg, #5856D6, #007AFF); color: #fff; border-radius: 14px; }
+    .btn-confirm:hover { opacity: .88; }
+
+    /* Calendar */
+    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .cal-arrow {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: none; background: var(--primary-lt); color: var(--primary);
+      font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: background .14s;
+    }
+    .cal-arrow:hover { background: rgba(0,122,255,.17); }
+    .cal-month-label { font-size: 16px; font-weight: 700; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+    .cal-wd { text-align: center; font-size: 10px; font-weight: 700; color: var(--text-sub); padding: 5px 0; }
+    .cal-wd:first-child { color: var(--c-cross); }
+    .cal-wd:last-child  { color: var(--primary); }
+    .cal-day {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; font-size: 13px; cursor: pointer;
+      transition: all .12s; position: relative; user-select: none;
+    }
+    .cal-day:not(.empty):not(.past):hover { background: var(--primary-lt); }
+    .cal-day.selected { background: var(--primary) !important; color: #fff !important; font-weight: 700; }
+    .cal-day.today:not(.selected) { font-weight: 800; color: var(--primary); }
+    .cal-day.today:not(.selected)::after {
+      content: ''; position: absolute; bottom: 2px; left: 50%;
+      transform: translateX(-50%); width: 4px; height: 4px; background: var(--primary); border-radius: 50%;
+    }
+    .cal-day.sun:not(.selected) { color: var(--c-cross); }
+    .cal-day.sat:not(.selected) { color: var(--primary); }
+    .cal-day.past { color: var(--border); cursor: default; pointer-events: none; }
+    .cal-day.empty { pointer-events: none; }
+
+    /* Date tags */
+    .date-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .date-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--primary-lt); color: var(--primary);
+      padding: 5px 11px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: background .12s;
+    }
+    .date-tag:hover { background: rgba(0,122,255,.16); }
+    .date-tag .rm { font-size: 13px; opacity: .5; transition: opacity .1s; }
+    .date-tag:hover .rm { opacity: 1; }
+    .cnt-pill { font-size: 9px; background: var(--primary); color: #fff; border-radius: 8px; padding: 1px 5px; }
+
+    /* Time config */
+    .time-section { margin-top: 14px; border-top: 1px solid var(--bg); padding-top: 14px; }
+    .time-date-box { background: var(--bg); border-radius: 10px; padding: 13px; margin-bottom: 8px; }
+    .time-date-hdr { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+    .time-date-hdr.open { margin-bottom: 12px; }
+    .time-date-name { font-size: 13px; font-weight: 700; }
+    .time-chevron { font-size: 16px; color: var(--text-sub); transition: transform .2s; display: inline-block; }
+    .time-chevron.open { transform: rotate(180deg); }
+    .time-preset-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .time-preset-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 9px; background: white;
+      border: 1.5px solid var(--border); cursor: pointer; transition: all .12s;
+    }
+    .time-preset-row.on { border-color: var(--primary); background: rgba(0,122,255,.06); }
+    .time-preset-range { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+    .time-preset-label { font-size: 11px; color: var(--text-sub); }
+    .time-check { font-size: 16px; color: var(--primary); opacity: 0; transition: opacity .12s; }
+    .time-preset-row.on .time-check { opacity: 1; }
+    .custom-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .t-input { width: 90px; padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; transition: border-color .15s; }
+    .t-input:focus { border-color: var(--primary); }
+    .added-times { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .time-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(52,199,89,.12); color: #1a7a38;
+      padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .time-chip-rm { border: none; background: none; color: inherit; opacity: .55; cursor: pointer; font-size: 12px; padding: 0; line-height: 1; }
+    .time-chip-rm:hover { opacity: 1; }
+
+    /* 4-mark buttons */
+    .mark-cell { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+    .mark-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 2px solid var(--border); background: #fff;
+      font-size: 14px; cursor: pointer; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; transition: all .12s;
+    }
+    .mark-btn:hover { transform: scale(1.12); }
+    .m-best     { border-color: rgba(88,86,214,.35); }
+    .m-circle   { border-color: rgba(52,199,89,.4); }
+    .m-triangle { border-color: rgba(255,159,10,.4); }
+    .m-cross    { border-color: rgba(255,59,48,.35); }
+    .m-best.on     { background: var(--c-best);     border-color: var(--c-best);     color: #fff; }
+    .m-circle.on   { background: var(--c-circle);   border-color: var(--c-circle);   color: #fff; }
+    .m-triangle.on { background: var(--c-triangle); border-color: var(--c-triangle); color: #fff; }
+    .m-cross.on    { background: var(--c-cross);    border-color: var(--c-cross);    color: #fff; }
+
+    /* Response / Summary tables */
+    .grid-scroll { overflow-x: auto; margin: 0 -22px; padding: 0 22px; }
+    .resp-table, .sum-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .resp-table th, .sum-table th {
+      padding: 8px 5px; text-align: center;
+      border-bottom: 1.5px solid var(--border); white-space: nowrap;
+    }
+    .resp-table th.name-col, .sum-table th.name-col { text-align: left; min-width: 80px; font-size: 11px; color: var(--text-sub); }
+    .slot-col { min-width: 54px; }
+    .slot-date { font-size: 11px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .slot-time { font-size: 9px; color: var(--text-sub); margin-top: 1px; }
+    .resp-table td, .sum-table td { padding: 5px 3px; text-align: center; border-bottom: 1px solid var(--bg); }
+    .resp-table td.name-cell, .sum-table td.name-cell { text-align: left; font-weight: 600; font-size: 12px; padding-left: 0; }
+    .resp-table tr:last-child td, .sum-table tr:last-child td { border-bottom: none; }
+
+    /* mark display */
+    .md { font-size: 14px; font-weight: 700; }
+    .md.db { color: var(--c-best); }
+    .md.dc { color: var(--c-circle); }
+    .md.dt { color: var(--c-triangle); }
+    .md.dx { color: var(--c-cross); }
+
+    /* Summary score row */
+    .score-row td { background: var(--bg); border-top: 1.5px solid var(--border); font-weight: 700; padding: 8px 4px; }
+    .score-badge { display: inline-block; padding: 2px 5px; border-radius: 8px; font-size: 10px; font-weight: 700; margin: 1px; }
+    .sb-b { background: rgba(88,86,214,.12); color: var(--c-best); }
+    .sb-c { background: rgba(52,199,89,.12); color: var(--c-circle); }
+    .sb-t { background: rgba(255,159,10,.12); color: var(--c-triangle); }
+    .sb-x { background: rgba(255,59,48,.10); color: var(--c-cross); }
+
+    /* Best column */
+    .best-th { position: relative; }
+    .best-mark { display: block; font-size: 9px; background: var(--c-success); color: #fff; border-radius: 6px; padding: 1px 5px; margin: 2px auto 0; width: fit-content; }
+    .best-td { background: rgba(52,199,89,.07) !important; }
+
+    .col-confirm-btn {
+      display: block; margin: 5px auto 0; padding: 3px 7px;
+      background: linear-gradient(135deg, #5856D6, #007AFF);
+      color: #fff; border: none; border-radius: 6px;
+      font-size: 9px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: opacity .14s; white-space: nowrap;
+    }
+    .col-confirm-btn:hover { opacity: .82; }
+    .confirmed-th-badge { display: block; font-size: 9px; background: var(--c-circle); color: #fff; border-radius: 6px; padding: 2px 6px; margin: 3px auto 0; width: fit-content; }
+
+    /* Deadline banner */
+    .deadline-banner {
+      border-radius: 12px; padding: 13px 16px; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .deadline-banner.active {
+      background: rgba(0,122,255,.07); border: 1.5px solid rgba(0,122,255,.2);
+    }
+    .deadline-banner.urgent {
+      background: rgba(255,159,10,.08); border: 1.5px solid rgba(255,159,10,.3);
+    }
+    .deadline-banner.expired {
+      background: rgba(255,59,48,.07); border: 1.5px solid rgba(255,59,48,.25);
+    }
+    .dl-icon { font-size: 22px; flex-shrink: 0; }
+    .dl-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 2px; }
+    .dl-label.active  { color: var(--primary); }
+    .dl-label.urgent  { color: var(--c-triangle); }
+    .dl-label.expired { color: var(--c-cross); }
+    .dl-value { font-size: 15px; font-weight: 700; }
+    .dl-sub   { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+
+    /* Locked page */
+    .locked-page {
+      text-align: center; padding: 60px 24px;
+    }
+    .locked-icon { font-size: 64px; margin-bottom: 16px; }
+    .locked-title { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+    .locked-sub   { font-size: 14px; color: var(--text-sub); line-height: 1.65; margin-bottom: 20px; }
+    .locked-detail {
+      background: rgba(255,59,48,.07); border: 1.5px solid rgba(255,59,48,.2);
+      border-radius: 12px; padding: 14px 18px; margin-bottom: 20px;
+      font-size: 13px; color: var(--c-cross); font-weight: 600;
+    }
+
+    /* Event card */
+    .ev-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .ev-title { font-size: 19px; font-weight: 700; }
+    .ev-meta-row { display: flex; align-items: flex-start; gap: 14px; }
+    .share-box { background: var(--bg); border-radius: 10px; padding: 11px 14px; display: flex; align-items: center; gap: 10px; }
+    .share-url { flex: 1; font-size: 12px; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Legend */
+    .legend { display: flex; flex-wrap: wrap; gap: 10px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .legend-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; flex-shrink: 0; }
+
+    /* Google Calendar */
+    .gcal-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 15px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: white; color: var(--text); font-size: 13px; font-weight: 600;
+      font-family: inherit; cursor: pointer; text-decoration: none; transition: all .14s;
+    }
+    .gcal-btn:hover { border-color: #4285F4; color: #4285F4; background: rgba(66,133,244,.06); }
+
+    /* Response list */
+    .resp-li { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--bg); }
+    .resp-li:last-child { border-bottom: none; }
+    .resp-li-name { font-weight: 600; font-size: 13px; }
+    .resp-li-sub  { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+      z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal {
+      background: #fff; border-radius: 20px;
+      padding: 28px 24px; max-width: 460px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      animation: modalIn .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes modalIn {
+      from { opacity:0; transform:scale(.9) translateY(20px); }
+      to   { opacity:1; transform:scale(1)  translateY(0); }
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .modal-sub   { font-size: 13px; color: var(--text-sub); margin-bottom: 18px; line-height: 1.5; }
+    .modal-slot-box {
+      background: linear-gradient(135deg, rgba(88,86,214,.08), rgba(0,122,255,.08));
+      border: 1.5px solid rgba(88,86,214,.25);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; text-align: center;
+    }
+    .modal-slot-date { font-size: 20px; font-weight: 800; color: var(--c-best); }
+    .modal-slot-time { font-size: 13px; color: var(--text-sub); margin-top: 3px; }
+    .modal-recipients { margin-bottom: 18px; max-height: 200px; overflow-y: auto; }
+    .modal-recipient { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--bg); font-size: 13px; }
+    .modal-recipient:last-child { border-bottom: none; }
+    .modal-recipient .rname  { font-weight: 600; }
+    .modal-recipient .remail { color: var(--text-sub); font-size: 11px; }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions .btn { flex: 1; }
+    .modal-note { font-size: 11px; color: var(--text-sub); text-align: center; margin-top: 12px; line-height: 1.5; }
+
+    /* Deadline expired notification modal */
+    .notif-modal {
+      background: #fff; border-radius: 20px;
+      padding: 28px 24px; max-width: 400px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      animation: modalIn .3s cubic-bezier(.34,1.56,.64,1);
+      text-align: center;
+    }
+    .notif-icon { font-size: 48px; margin-bottom: 12px; }
+    .notif-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .notif-sub   { font-size: 13px; color: var(--text-sub); margin-bottom: 20px; line-height: 1.6; }
+    .notif-count {
+      font-size: 28px; font-weight: 800; color: var(--primary); margin-bottom: 4px;
+    }
+    .notif-count-label { font-size: 12px; color: var(--text-sub); margin-bottom: 20px; }
+    .notif-actions { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Confirmed banner */
+    .confirmed-banner {
+      background: linear-gradient(135deg, rgba(52,199,89,.12), rgba(0,199,89,.05));
+      border: 1.5px solid rgba(52,199,89,.35);
+      border-radius: 12px; padding: 16px 18px; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .confirmed-icon { font-size: 28px; }
+    .confirmed-label { font-size: 11px; font-weight: 600; color: var(--c-circle); letter-spacing: .3px; text-transform: uppercase; }
+    .confirmed-date  { font-size: 18px; font-weight: 800; }
+    .confirmed-time  { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+
+    /* Hero */
+    .hero { text-align: center; padding: 52px 0 30px; }
+    .hero-e { font-size: 60px; margin-bottom: 14px; }
+    .hero h1 { font-size: 30px; font-weight: 800; letter-spacing: -.6px; margin-bottom: 10px; line-height: 1.25; }
+    .hero p  { font-size: 15px; color: var(--text-sub); max-width: 340px; margin: 0 auto 28px; line-height: 1.65; }
+    .feat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .feat-card { background: var(--card); border-radius: var(--r); padding: 18px 12px; text-align: center; box-shadow: var(--shadow); }
+    .feat-e { font-size: 26px; margin-bottom: 7px; }
+    .feat-t { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+    .feat-d { font-size: 11px; color: var(--text-sub); line-height: 1.5; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: rgba(29,29,31,.88); color: #fff;
+      padding: 10px 20px; border-radius: 24px;
+      font-size: 14px; font-weight: 500; backdrop-filter: blur(12px);
+      z-index: 999; transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    .divider { height: 1px; background: var(--bg); margin: 16px 0; }
+    .empty-state { text-align: center; padding: 26px; color: var(--text-sub); font-size: 13px; }
+    .fade-in { animation: fi .23s ease; }
+    @keyframes fi { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+    /* Highlight row for organizer in locked view */
+    .organizer-only-bar {
+      background: rgba(88,86,214,.07); border: 1.5px solid rgba(88,86,214,.2);
+      border-radius: 12px; padding: 14px 18px; margin-bottom: 14px;
+    }
+    .organizer-only-bar .org-label { font-size: 11px; font-weight: 700; color: var(--c-best); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+
+    @media (max-width: 480px) {
+      .container { padding: 18px 12px 80px; }
+      .card { padding: 17px 13px; }
+      .hero h1 { font-size: 24px; }
+      .feat-d { display: none; }
+      .modal, .notif-modal { padding: 22px 18px; }
+      .mark-btn { width: 30px; height: 30px; font-size: 12px; }
+      .form-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+//  Constants
+// ════════════════════════════════════════════
+const WD = ['日','月','火','水','木','金','土'];
+
+const TIME_PRESETS = [
+  { label: '午前前半', value: '9:00〜11:00'  },
+  { label: '午前後半', value: '11:00〜13:00' },
+  { label: '昼',       value: '13:00〜15:00' },
+  { label: '午後前半', value: '15:00〜17:00' },
+  { label: '夕方',     value: '17:00〜19:00' },
+  { label: '夜',       value: '19:00〜21:00' },
+];
+
+// ◎と○は同じ重み（参加可能 = 1）△は考慮外、×は不可
+// ベスト日 = ◎+○の合計が最多の列
+// タイブレーク = ◎の数が多い列
+const MARKS = [
+  { val: '◎', label: '絶対行きたい！', cls: 'm-best',     dc: 'db', color: '#5856D6', avail: true  },
+  { val: '○', label: '参加できる',     cls: 'm-circle',   dc: 'dc', color: '#34C759', avail: true  },
+  { val: '△', label: '遅れてならOK',  cls: 'm-triangle', dc: 'dt', color: '#FF9F0A', avail: false },
+  { val: '×', label: '参加できない',   cls: 'm-cross',    dc: 'dx', color: '#FF3B30', avail: false },
+];
+const MARK_MAP = {};
+MARKS.forEach(m => MARK_MAP[m.val] = m);
+
+// ════════════════════════════════════════════
+//  State
+// ════════════════════════════════════════════
+const _now = new Date(); _now.setHours(0,0,0,0);
+
+let S = {
+  view: 'home',
+
+  // create
+  title: '', memo: '',
+  organizerEmail: '',
+  deadlineDate: '', deadlineTime: '',
+  calYear: _now.getFullYear(), calMonth: _now.getMonth(),
+  selDates: [], dateSlots: {}, customFrom: {}, customTo: {}, expandedDate: null,
+
+  // event (post-create)
+  event: null,
+  /* event = { title, memo, organizerEmail, deadline (ISO string|null), slots[] } */
+
+  // respond
+  curName: '', curEmail: '', curMarks: {}, responses: [], editIdx: -1,
+
+  // organizer
+  confirmedSlotId: null,
+  confirmModalSlotId: null,
+  deadlineExpiredModal: false,
+  isOrganizer: false,  // true = this browser created the event
+};
+
+// ════════════════════════════════════════════
+//  Deadline watcher
+// ════════════════════════════════════════════
+let _dlInterval = null;
+let _dlNotified = false;
+
+function startDeadlineWatch() {
+  if (_dlInterval) clearInterval(_dlInterval);
+  _dlNotified = false;
+  _dlInterval = setInterval(checkDeadline, 8000);
+  checkDeadline();
+}
+function checkDeadline() {
+  if (!S.event?.deadline || _dlNotified) return;
+  if (new Date() > new Date(S.event.deadline) && S.isOrganizer) {
+    _dlNotified = true;
+    S.deadlineExpiredModal = true;
+    render();
+  }
+}
+function closeDeadlineModal() {
+  S.deadlineExpiredModal = false;
+  render();
+}
+function goSummaryFromDeadline() {
+  S.deadlineExpiredModal = false;
+  go('summary');
+}
+function notifyOrganizerEmail() {
+  if (!S.event.organizerEmail) { toast('主催者メールが未設定です'); return; }
+  const subject = encodeURIComponent(`【YOTEI】${S.event.title} の回答期限になりました`);
+  const body = encodeURIComponent(
+    `${S.event.title} の回答期限が終了しました。\n\n` +
+    `回答者数: ${S.responses.length}名\n\n` +
+    `確定作業を進めてください。\n\n---\nYOTEI 日程調整ツール`
+  );
+  window.location.href = `mailto:${encodeURIComponent(S.event.organizerEmail)}?subject=${subject}&body=${body}`;
+  toast('✓ 通知メールをメーラーで送信します');
+}
+
+// ════════════════════════════════════════════
+//  Utilities
+// ════════════════════════════════════════════
+function fmtDate(ds) {
+  const [y,m,d] = ds.split('-').map(Number);
+  return `${m}/${d}(${WD[new Date(y,m-1,d).getDay()]})`;
+}
+function fmtDateFull(ds) {
+  const [y,m,d] = ds.split('-').map(Number);
+  return `${y}年${m}月${d}日(${WD[new Date(y,m-1,d).getDay()]})`;
+}
+function toDS(y,m0,d) {
+  return `${y}-${String(m0+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function isPast(ds) { const [y,m,d]=ds.split('-').map(Number); return new Date(y,m-1,d)<_now; }
+function isToday(ds){ const [y,m,d]=ds.split('-').map(Number); return new Date(y,m-1,d).getTime()===_now.getTime(); }
+
+function getDeadlineStatus() {
+  if (!S.event?.deadline) return null;
+  const dl  = new Date(S.event.deadline);
+  const now = new Date();
+  const diff = dl - now;
+  if (diff <= 0) return { type: 'expired', label: '受付終了', dlStr: dl.toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) };
+  const totalMins = Math.floor(diff / 60000);
+  const hours = Math.floor(totalMins / 60);
+  const mins  = totalMins % 60;
+  let label, type;
+  if (hours >= 24) { const days=Math.floor(hours/24); label=`残り${days}日${hours%24}時間`; type='active'; }
+  else if (hours >= 3) { label=`残り${hours}時間${mins}分`; type='active'; }
+  else { label=`残り${hours}時間${mins}分`; type='urgent'; }
+  return { type, label, dlStr: dl.toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) };
+}
+
+function isDeadlinePassed() {
+  if (!S.event?.deadline) return false;
+  return new Date() > new Date(S.event.deadline);
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+function go(view) { S.view=view; render(); window.scrollTo(0,0); }
+
+// ════════════════════════════════════════════
+//  Actions — create
+// ════════════════════════════════════════════
+function prevMonth() { if(S.calMonth===0){S.calYear--;S.calMonth=11;}else S.calMonth--; render(); }
+function nextMonth() { if(S.calMonth===11){S.calYear++;S.calMonth=0;}else S.calMonth++; render(); }
+function toggleDate(ds) {
+  const i=S.selDates.indexOf(ds);
+  if(i>=0){S.selDates.splice(i,1);delete S.dateSlots[ds];delete S.customFrom[ds];delete S.customTo[ds];if(S.expandedDate===ds)S.expandedDate=null;}
+  else{S.selDates.push(ds);S.selDates.sort();S.dateSlots[ds]=[];S.customFrom[ds]='';S.customTo[ds]='';}
+  render();
+}
+function expandDate(ds) { S.expandedDate=S.expandedDate===ds?null:ds; render(); }
+function togglePreset(ds,val) {
+  const arr=S.dateSlots[ds]||[];const i=arr.indexOf(val);
+  if(i>=0)arr.splice(i,1);else arr.push(val);S.dateSlots[ds]=arr;render();
+}
+function removeDate(ds) {
+  S.selDates.splice(S.selDates.indexOf(ds),1);
+  delete S.dateSlots[ds];delete S.customFrom[ds];delete S.customTo[ds];
+  if(S.expandedDate===ds)S.expandedDate=null;render();
+}
+function addCustomTime(ds) {
+  const f=S.customFrom[ds]||'',t=S.customTo[ds]||'';
+  if(!f||!t){toast('開始・終了時刻を入力してください');return;}
+  const val=`${f}〜${t}`;const arr=S.dateSlots[ds]||[];
+  if(!arr.includes(val))arr.push(val);S.dateSlots[ds]=arr;S.customFrom[ds]='';S.customTo[ds]='';render();
+}
+function removeTime(ds,val){const arr=S.dateSlots[ds]||[];arr.splice(arr.indexOf(val),1);render();}
+function setCustomFrom(ds,v){S.customFrom[ds]=v;}
+function setCustomTo(ds,v){S.customTo[ds]=v;}
+
+function createEvent() {
+  if(!S.title.trim()){toast('イベント名を入力してください');return;}
+  if(!S.selDates.length){toast('候補日を選んでください');return;}
+  if(S.organizerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.organizerEmail.trim())){
+    toast('主催者メールアドレスの形式が正しくありません');return;
+  }
+  let dl = null;
+  if(S.deadlineDate && S.deadlineTime) {
+    dl = new Date(`${S.deadlineDate}T${S.deadlineTime}`).toISOString();
+  } else if(S.deadlineDate) {
+    dl = new Date(`${S.deadlineDate}T23:59`).toISOString();
+  }
+  let id=0;const slots=[];
+  for(const ds of S.selDates){
+    const times=S.dateSlots[ds]||[];
+    if(!times.length)slots.push({id:String(id++),date:ds,time:null,dateLabel:fmtDate(ds)});
+    else for(const t of times)slots.push({id:String(id++),date:ds,time:t,dateLabel:fmtDate(ds)});
+  }
+  S.event={title:S.title.trim(),memo:S.memo.trim(),organizerEmail:S.organizerEmail.trim(),deadline:dl,slots};
+  S.curName='';S.curEmail='';S.curMarks={};S.editIdx=-1;
+  S.responses=[];S.confirmedSlotId=null;S.confirmModalSlotId=null;
+  S.deadlineExpiredModal=false;S.isOrganizer=true;
+  startDeadlineWatch();
+  go('respond');
+}
+
+// ════════════════════════════════════════════
+//  Actions — respond
+// ════════════════════════════════════════════
+function setMark(slotId,val) {
+  if(S.curMarks[slotId]===val)delete S.curMarks[slotId];else S.curMarks[slotId]=val;render();
+}
+function submitResponse() {
+  if(!S.curName.trim()){toast('お名前を入力してください');return;}
+  if(!S.curEmail.trim()){toast('メールアドレスを入力してください');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.curEmail.trim())){toast('正しいメールアドレスを入力してください');return;}
+  for(const s of S.event.slots){if(!S.curMarks[s.id])S.curMarks[s.id]='×';}
+  const entry={name:S.curName.trim(),email:S.curEmail.trim(),marks:{...S.curMarks}};
+  if(S.editIdx>=0){S.responses[S.editIdx]=entry;S.editIdx=-1;toast('✓ 回答を更新しました');}
+  else{S.responses.push(entry);toast('✓ 回答しました！');}
+  S.curName='';S.curEmail='';S.curMarks={};render();
+}
+function editResponse(i) {
+  const r=S.responses[i];S.curName=r.name;S.curEmail=r.email;S.curMarks={...r.marks};S.editIdx=i;render();
+  setTimeout(()=>{document.getElementById('inp-name')?.scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('inp-name')?.focus();},50);
+}
+function deleteResponse(i) {
+  S.responses.splice(i,1);
+  if(S.editIdx===i){S.editIdx=-1;S.curName='';S.curEmail='';S.curMarks={};}render();
+}
+function cancelEdit(){S.editIdx=-1;S.curName='';S.curEmail='';S.curMarks={};render();}
+
+// ════════════════════════════════════════════
+//  Actions — organizer confirm
+// ════════════════════════════════════════════
+function openConfirmModal(slotId){S.confirmModalSlotId=slotId;render();}
+function closeModal(){S.confirmModalSlotId=null;render();}
+
+function sendConfirmation() {
+  const slot=S.event.slots.find(s=>s.id===S.confirmModalSlotId);if(!slot)return;
+  const emails=S.responses.map(r=>r.email).filter(Boolean);
+  const dateStr=fmtDateFull(slot.date)+(slot.time?' '+slot.time:'（終日）');
+  const subject=encodeURIComponent(`【確定】${S.event.title} の日程が決まりました`);
+  const body=encodeURIComponent(`${S.event.title} の日程が確定いたしました。\n\n■ 確定日時\n${dateStr}\n\nご参加をよろしくお願いいたします。\n\n---\nYOTEI 日程調整ツール`);
+  const mailto=`mailto:?bcc=${encodeURIComponent(emails.join(','))}&subject=${subject}&body=${body}`;
+  S.confirmedSlotId=S.confirmModalSlotId;S.confirmModalSlotId=null;
+  window.location.href=mailto;
+  toast('✓ 日程確定。メーラーが開きます。');render();
+}
+
+// ════════════════════════════════════════════
+//  Render — calendar
+// ════════════════════════════════════════════
+function rCalendar() {
+  const {calYear:y,calMonth:m}=S;
+  const mns=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  let h=`<div class="cal-nav">
+    <button class="cal-arrow" onclick="prevMonth()">‹</button>
+    <span class="cal-month-label">${y}年 ${mns[m]}</span>
+    <button class="cal-arrow" onclick="nextMonth()">›</button>
+  </div><div class="cal-grid">${WD.map(w=>`<div class="cal-wd">${w}</div>`).join('')}`;
+  for(let i=0;i<first;i++)h+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=toDS(y,m,d),dow=(first+d-1)%7;
+    const past=isPast(ds),sel=S.selDates.includes(ds),tod=isToday(ds);
+    let cls='cal-day';
+    if(dow===0)cls+=' sun';if(dow===6)cls+=' sat';
+    if(past)cls+=' past';if(sel)cls+=' selected';if(tod)cls+=' today';
+    h+=`<div class="${cls}" onclick="toggleDate('${ds}')">${d}</div>`;
+  }
+  return h+`</div>`;
+}
+
+// ════════════════════════════════════════════
+//  Render — time config
+// ════════════════════════════════════════════
+function rTimeConfig() {
+  if(!S.selDates.length)return'';
+  let h=`<div class="time-section">
+    <p class="section-label" style="margin-bottom:4px;">時間帯（任意）</p>
+    <p style="font-size:11px;color:var(--text-sub);margin-bottom:10px;">日付をタップして展開。9:00から2時間おきのプリセットが使えます。</p>`;
+  for(const ds of S.selDates){
+    const times=S.dateSlots[ds]||[],open=S.expandedDate===ds;
+    h+=`<div class="time-date-box">
+      <div class="time-date-hdr${open?' open':''}" onclick="expandDate('${ds}')">
+        <span class="time-date-name">${fmtDate(ds)}</span>
+        <span style="display:flex;align-items:center;gap:6px;">
+          ${times.length?`<span class="cnt-pill">${times.length}件</span>`:''}
+          <span class="time-chevron${open?' open':''}">⌄</span>
+        </span>
+      </div>`;
+    if(times.length)h+=`<div class="added-times">${times.map(t=>`<span class="time-chip">${t}<button class="time-chip-rm" onclick="removeTime('${ds}','${t}')">×</button></span>`).join('')}</div>`;
+    if(open)h+=`<div style="margin-top:10px;"><div class="time-preset-list">${TIME_PRESETS.map(p=>{const on=times.includes(p.value);return`<div class="time-preset-row${on?' on':''}" onclick="togglePreset('${ds}','${p.value}')"><span class="time-preset-range">${p.value}</span><span class="time-preset-label">${p.label}</span><span class="time-check">✓</span></div>`;}).join('')}</div><div class="custom-row"><input class="t-input" type="time" value="${S.customFrom[ds]||''}" oninput="setCustomFrom('${ds}',this.value)"><span style="color:var(--text-sub);font-size:13px;">〜</span><input class="t-input" type="time" value="${S.customTo[ds]||''}" oninput="setCustomTo('${ds}',this.value)"><button class="btn btn-ghost btn-sm" onclick="addCustomTime('${ds}')">追加</button></div></div>`;
+    h+=`</div>`;
+  }
+  return h+`</div>`;
+}
+
+// ════════════════════════════════════════════
+//  Render — mark buttons
+// ════════════════════════════════════════════
+function rMarkCell(slotId) {
+  return`<div class="mark-cell">${MARKS.map(mk=>{const on=S.curMarks[slotId]===mk.val;return`<button class="mark-btn ${mk.cls}${on?' on':''}" onclick="setMark('${slotId}','${mk.val}')" title="${mk.label}">${mk.val}</button>`;}).join('')}</div>`;
+}
+
+// ════════════════════════════════════════════
+//  Render — response grid
+// ════════════════════════════════════════════
+function rResponseGrid() {
+  const slots=S.event.slots;
+  let thead=`<tr><th class="name-col">名前</th>${slots.map(s=>`<th class="slot-col"><div class="slot-date">${s.dateLabel}</div>${s.time?`<div class="slot-time">${s.time}</div>`:''}</th>`).join('')}</tr>`;
+  let tbody='';
+  for(let i=0;i<S.responses.length;i++){
+    const r=S.responses[i],isEdit=S.editIdx===i;
+    tbody+=`<tr style="${isEdit?'background:rgba(0,122,255,.04)':''}"><td class="name-cell">${r.name}${isEdit?'<br><span style="font-size:9px;color:var(--primary)">編集中</span>':''}</td>`;
+    for(const s of slots){const v=r.marks[s.id]||'';const mk=MARK_MAP[v];tbody+=`<td><span class="md ${mk?mk.dc:'dx'}">${v}</span></td>`;}
+    tbody+=`</tr>`;
+  }
+  tbody+=`<tr id="input-row"><td class="name-cell"><em style="font-size:11px;color:var(--primary);">あなた</em></td>${slots.map(s=>`<td style="padding:3px 2px;">${rMarkCell(s.id)}</td>`).join('')}</tr>`;
+  return`<div class="grid-scroll"><table class="resp-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+}
+
+// ════════════════════════════════════════════
+//  Render — summary grid
+//  ベスト日 = ◎+○が最多 / タイブレーク = ◎が最多
+// ════════════════════════════════════════════
+function rSummaryGrid() {
+  const slots=S.event.slots,resps=S.responses;
+  // 参加可能（◎+○）の合計でスコア算出
+  const availCounts = slots.map(s => resps.filter(r=>r.marks[s.id]==='◎'||r.marks[s.id]==='○').length);
+  const bestCounts  = slots.map(s => resps.filter(r=>r.marks[s.id]==='◎').length);
+  const maxAvail    = Math.max(...availCounts, 0);
+  // ベスト = availが最大 かつ ◎も最大のもぞ
+  const bestSet = new Set();
+  if(maxAvail > 0) {
+    const maxBest = Math.max(...slots.filter((_,i)=>availCounts[i]===maxAvail).map((_,j)=>bestCounts[slots.findIndex((s,i)=>availCounts[i]===maxAvail&&j===slots.filter((_,k)=>availCounts[k]===maxAvail).indexOf(slots[i]))]));
+    slots.forEach((s,i)=>{ if(availCounts[i]===maxAvail) bestSet.add(s.id); });
+  }
+
+  let thead=`<tr><th class="name-col">参加者</th>`;
+  for(let i=0;i<slots.length;i++){
+    const s=slots[i],isBest=bestSet.has(s.id),isConf=S.confirmedSlotId===s.id;
+    thead+=`<th class="${isBest?'best-th':''}">
+      <div class="slot-date">${s.dateLabel}</div>
+      ${s.time?`<div class="slot-time">${s.time}</div>`:''}
+      ${isConf?`<span class="confirmed-th-badge">✓ 確定済み</span>`:''}
+      ${isBest&&!isConf?`<span class="best-mark">◎+○ ベスト</span>`:''}
+      ${!isConf&&!S.confirmedSlotId?`<button class="col-confirm-btn" onclick="openConfirmModal('${s.id}')">この日で確定</button>`:''}
+    </th>`;
+  }
+  thead+=`</tr>`;
+
+  let tbody='';
+  for(const r of resps){
+    tbody+=`<tr><td class="name-cell">${r.name}</td>`;
+    for(let i=0;i<slots.length;i++){
+      const s=slots[i],v=r.marks[s.id]||'',mk=MARK_MAP[v];
+      tbody+=`<td class="${bestSet.has(s.id)?'best-td':''}"><span class="md ${mk?mk.dc:'dx'}">${v}</span></td>`;
+    }
+    tbody+=`</tr>`;
+  }
+
+  tbody+=`<tr class="score-row"><td class="name-cell" style="font-size:11px;color:var(--text-sub);">集計</td>`;
+  for(let i=0;i<slots.length;i++){
+    const s=slots[i];const cnt={};
+    MARKS.forEach(mk=>{cnt[mk.val]=resps.filter(r=>r.marks[s.id]===mk.val).length;});
+    const ac=availCounts[i];
+    tbody+=`<td class="${bestSet.has(s.id)?'best-td':''}">
+      <div style="font-size:11px;font-weight:800;color:var(--primary);margin-bottom:3px;">参加可${ac}人</div>
+      <span class="score-badge sb-b">◎${cnt['◎']}</span>
+      <span class="score-badge sb-c">○${cnt['○']}</span>
+      <span class="score-badge sb-t">△${cnt['△']}</span>
+      <span class="score-badge sb-x">×${cnt['×']}</span>
+    </td>`;
+  }
+  tbody+=`</tr>`;
+
+  return`<div class="grid-scroll"><table class="sum-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+}
+
+// ════════════════════════════════════════════
+//  Render — confirm modal
+// ════════════════════════════════════════════
+function rConfirmModal() {
+  if(!S.confirmModalSlotId)return'';
+  const slot=S.event.slots.find(s=>s.id===S.confirmModalSlotId);if(!slot)return'';
+  return`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <div class="modal-title">📅 日程を確定しますえ���</div>
+    <div class="modal-sub">以下の日程で確定し、参加者全員にメールで通知します。<br>内容を確認のうえ、「了承・メール送信」を押してください。</div>
+    <div class="modal-slot-box">
+      <div class="modal-slot-date">${fmtDateFull(slot.date)}</div>
+      <div class="modal-slot-time">${slot.time||'終日'}</div>
+    </div>
+    <p class="section-label" style="margin-bottom:10px;">通知先 (${S.responses.length}人)</p>
+    <div class="modal-recipients">
+      ${S.responses.length===0?`<p style="font-size:12px;color:var(--text-sub);text-align:center;padding:10px;">回答者がいません</p>`:
+        S.responses.map(r=>{const mk=MARK_MAP[r.marks[slot.id]];return`<div class="modal-recipient"><span class="md ${mk?mk.dc:'dx'}" style="font-size:16px;min-width:20px;">${r.marks[slot.id]||'—'}</span><div style="flex:1;min-width:0;"><div class="rname">${r.name}</div><div class="remail">${r.email}</div></div></div>`;}).join('')}
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-confirm" onclick="sendConfirmation()">✓ 了承・メール送信</button>
+    </div>
+    <p class="modal-note">※ 端末のメールアプリが開きます。送信ボタンで参加者全員へ通知されます。</p>
+  </div></div>`;
+}
+
+// ════════════════════════════════════════════
+//  Render — deadline expired modal（主催者向け通知）
+// ════════════════════════════════════════════
+function rDeadlineModal() {
+  if(!S.deadlineExpiredModal)return'';
+  return`<div class="modal-overlay"><div class="notif-modal">
+    <div class="notif-icon">📋</div>
+    <div class="notif-title">回答期限になりました</div>
+    <div class="notif-sub">参加者の回答が締め刉られました。<br>集計結果を確認して、日程を確定しましょう。</div>
+    <div class="notif-count">${S.responses.length}人</div>
+    <div class="notif-count-label">が回答しました</div>
+    <div class="notif-actions">
+      ${S.event.organizerEmail?`<button class="btn btn-ghost btn-full" onclick="notifyOrganizerEmail()">
+        📧 自分（主催者）へ通知メール送信
+      </button>`:''}
+      <button class="btn btn-confirm btn-full" onclick="goSummaryFromDeadline()">
+        集計・確定へ進む →
+      </button>
+      <button class="btn btn-sm" style="background:none;color:var(--text-sub);font-size:12px;" onclick="closeDeadlineModal()">後で確認する</button>
+    </div>
+  </div></div>`;
+}
+
+// ════════════════════════════════════════════
+//  Views
+// ════════════════════════════════════════════
+function vHome() {
+  return`<div class="container fade-in">
+    <div class="hero">
+      <div class="hero-e">📅</div>
+      <h1>日程調整を、<br>もっと直感的に。</h1>
+      <p>カレンダーをタップするだけで候補日を選択。優先度マーク◎○△×で細かい意思表示も可能。</p>
+      <button class="btn btn-primary" style="font-size:16px;padding:14px 34px;border-radius:16px;" onclick="go('create')">イベントを作る →</button>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-e">📆</div><div class="feat-t">カレンダー選択</div><div class="feat-d">タップで複数日をすばやく選択。コピペ不要。</div></div>
+      <div class="feat-card"><div class="feat-e">⭐</div><div class="feat-t">4段階優先度</div><div class="feat-d">◎絶対・○参加・△遅刻OK・×不可で意思表示</div></div>
+      <div class="feat-card"><div class="feat-e">🔒</div><div class="feat-t">期限オートロック</div><div class="feat-d">期限後は自動締切。主催者へ通知して確定作業へ。</div></div>
+    </div>
+  </div>`;
+}
+
+function vCreate() {
+  const ok=S.title.trim()&&S.selDates.length;
+  return`<div class="container fade-in">
+    <div class="page-title>>イベントを作成</div>
+    <div class="page-sub">情報を入力して候補日を選択してください</div>
+
+    <div class="card">
+      <p class="section-label">基本情報</p>
+      <div class="form-group">
+        <input class="input" type="text" placeholder="イベント名（例：チームランチ）"
+          value="${S.title}" oninput="S.title=this.value">
+      </div>
+      <div class="form-group">
+        <input class="input" type="text" placeholder="メモ・備考（任意）"
+          value="${S.memo}" oninput="S.memo=this.value">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <input class="input" type="email" placeholder="主催者メールアドレス（回答期限通知に使用・任意）"
+          value="${S.organizerEmail}" oninput="S.organizerEmail=this.value">
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="section-label">回答期限（オートロック）</p>
+      <p style="font-size:12px;color:var(--text-sub);margin-bottom:12px;">
+        設定すると、期限後はリンクが自動的に締め切られます。期限になると主催者に通知が届きます。
+      </p>
+      <div class="form-row">
+        <div class="form-group">
+          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">締切日</label>
+          <input class="input" type="date" value="${S.deadlineDate}" oninput="S.deadlineDate=this.value"
+            min="${toDS(_now.getFullYear(),_now.getMonth(),_now.getDate())}">
+        </div>
+        <div class="form-group">
+          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">締切時刻</label>
+          <input class="input" type="time" value="${S.deadlineTime}" oninput="S.deadlineTime=this.value">
+        </div>
+      </div>
+      ${S.deadlineDate?`<p style="font-size:11px;color:var(--primary);margin-top:-6px;">
+        🔒 ${S.deadlineDate.replace(/-/g,'/')} ${S.deadlineTime||'23:59'} に自動締切
+      </p>`:''}
+    </div>
+
+    <div class="card">
+      <p class="section-label">候補日を選ぶ${S.selDates.length?` <span style="color:var(--primary);font-weight:700;text-transform:none;letter-spacing:0;">— ${S.selDates.length}日選択中</span>`:''}</p>
+      ${rCalendar()}
+      ${S.selDates.length?`<div class="date-tags">${S.selDates.map(ds=>{const n=(S.dateSlots[ds]||[]).length;return`<span class="date-tag" onclick="expandDate('${ds}')">${fmtDate(ds)}${n?`<span class="cnt-pill">${n}件</span>`:''}<span class="rm" onclick="event.stopPropagation();removeDate('${ds}')">×</span></span>`;}).join('')}</div>`:''}
+      ${rTimeConfig()}
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="createEvent()">リンクを生成して次へ →</button>
+    ${!ok?`<p style="text-align:center;font-size:11px;color:var(--text-sub);margin-top:7px;">${!S.title.trim()?'イベント名':'候補日'}を入力してください</p>`:''}
+  </div>`;
+}
+
+function vRespond() {
+  const ev=S.event;
+  const dlStatus=getDeadlineStatus();
+  const locked=isDeadlinePassed();
+  const confSlot=S.confirmedSlotId?ev.slots.find(s=>s.id===S.confirmedSlotId):null;
+
+  // 期限切れで参加者（非主催者）の場合はロック画面
+  if(locked && !S.isOrganizer) {
+    return`<div class="container fade-in">
+      <div class="card">
+        <div class="locked-page">
+          <div class="locked-icon">🔒</div>
+          <div class="locked-title">受付終了しました</div>
+          <div class="locked-sub">このイベントへの回答受付は終了しました。<br>日程の確定をしばらくり待ちください。</div>
+          <div class="locked-detail">${dlStatus?.dlStr} をもって締め切りました</div>
+          <p style="font-size:13px;font-weight:700;">${ev.title}</p>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  return`<div class="container fade-in">
+    ${confSlot?`<div class="confirmed-banner"><div class="confirmed-icon">✅</div><div><div class="confirmed-label">日程確定済み</div><div class="confirmed-date">${fmtDateFull(confSlot.date)}</div>${confSlot.time?`<div class="confirmed-time">${confSlot.time}</div>`:''}</div></div>`:''}
+
+    ${dlStatus?`<div class="deadline-banner ${dlStatus.type}">
+      <div class="dl-icon">${dlStatus.type==='expired'?'🔒':dlStatus.type==='urgent'?'⚠️':'⏰'}</div>
+      <div>
+        <div class="dl-label ${dlStatus.type}">${dlStatus.type==='expired'?'受付終了':dlStatus.type==='urgent'?'まもなく締切':'回答期限'}</div>
+        <div class="dl-value">${dlStatus.label}</div>
+        <div class="dl-sub">締切：${dlStatus.dlStr}</div>
+      </div>
+    </div>`:''}
+
+    <div class="card">
+      <div class="ev-meta-row">
+        <div class="ev-icon">📅</div>
+        <div>
+          <div class="ev-title">${ev.title}</div>
+          ${ev.memo?`<div style="font-size:13px;color:var(--text-sub);margin-top:3px;">${ev.memo}</div>`:''}
+          <div style="font-size:11px;color:var(--text-sub);margin-top:6px;">${ev.slots.length}候補 · ${S.responses.length}人回答済み</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <p class="section-label" style="margin-bottom:8px;">参加者に共有するURL</p>
+      <div class="share-box">
+        <span class="share-url">https://yotei.app/e/abc123xyz</span>
+        <button class="btn btn-ghost btn-sm" onclick="toast('✓ URLをコピーしました')">コピー</button>
+      </div>
+    </div>
+
+    <div class="card" style="padding:14px 22px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;">📅 予定を確認しながら入力</div>
+          <div style="font-size:11px;color:var(--text-sub);margin-top:2px;">Googleカレンダーで予定を確認しながら回答できます</div>
+        </div>
+        <a href="https://calendar.google.com" target="_blank" rel="noopener" class="gcal-btn">
+          <svg width="16" height="16" viewBox="0 0 48 48"><path d="M34 6H14C9.6 6 6 9.6 6 14v20c0 4.4 3.6 8 8 8h20c4.4 0 8-3.6 8-8V14c0-4.4-3.6-8-8-8z" fill="#4285F4"/><rect x="14" y="20" width="20" height="16" rx="2" fill="#fff"/><path d="M18 9h12v8H18z" fill="#EA4335"/><circle cx="20" cy="9" r="2" fill="#fff"/><circle cx="28" cy="9" r="2" fill="#fff"/></svg>
+          Googleカレンダーを確認する
+        </a>
+      </div>
+    </div>
+
+    <div class="card" style="padding:14px 22px;">
+      <p class="section-label" style="margin-bottom:10px;">優先度マークの意味</p>
+      <div class="legend">
+        ${MARKS.map(mk=>`<div class="legend-item"><div class="legend-dot" style="background:${mk.color};">${mk.val}</div><span><b>${mk.val}</b> ${mk.label}</span></div>`).join('')}
+      </div>
+      <p style="font-size:11px;color:var(--text-sub);margin-top:10px;">※ <b>◎と○は同じ「参加可能」</b>として集計されます。迷ったとき・特に行きたいときに◎を使ってください。</p>
+    </div>
+
+    ${locked?`<div class="organizer-only-bar">
+      <div class="org-label">🔒 主催者専用 — 受付は終了しましたが、集計・確定へ進めます</div>
+      <button class="btn btn-success btn-full" onclick="go('summary')">集計・確定へ進む →</button>
+    </div>`:`<div class="card">
+      <p class="section-label">${S.editIdx>=0?'回答を編集中':'あなたの都合を入力'}</p>
+      <div class="form-group">
+        <input class="input" id="inp-name" type="text" placeholder="お名前（必須）"
+          value="${S.curName}" oninput="S.curName=this.value">
+      </div>
+      <div class="form-group">
+        <input class="input" id="inp-email" type="email"
+          placeholder="メールアドレス（必須 — 日程確定時に通知が届きます）"
+          value="${S.curEmail}" oninput="S.curEmail=this.value">
+      </div>
+      <p style="font-size:11px;color:var(--text-sub);margin-bottom:12px;">各日程の優先度を選んでください。未選択は「×」として扱われます。</p>
+      ${rResponseGrid()}
+      <div style="margin-top:14px;display:flex;gap:10px;">
+        <button class="btn btn-primary btn-full" onclick="submitResponse()">${S.editIdx>=0?'✓ 更新する':'✓ 回答する'}</button>
+        ${S.editIdx>=0?`<button class="btn btn-danger btn-sm" onclick="cancelEdit()">キャンセル</button>`:''}
+      </div>
+    </div>`}
+
+    ${S.responses.length?`<div class="card">
+      <p class="section-label">${S.responses.length}人の回答</p>
+      ${S.responses.map((r,i)=>{
+        const bc=ev.slots.filter(s=>r.marks[s.id]==='◎').length;
+        const cc=ev.slots.filter(s=>r.marks[s.id]==='○').length;
+        return`<div class="resp-li"><div><div class="resp-li-name">${r.name}</div><div class="resp-li-sub">${r.email} &nbsp;<span style="color:var(--c-best)">◎${bc}</span><span style="color:var(--c-circle);margin-left:5px;">○${cc}</span></div></div><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="editResponse(${i})">編集</button><button class="btn btn-danger btn-xs" onclick="deleteResponse(${i})">削除</button></div></div>`;
+      }).join('')}
+      <div style="margin-top:14px;"><button class="btn btn-success btn-full" onclick="go('summary')">集計・確定へ →</button></div>
+    </div>`:`<div class="card"><div class="empty-state"><div style="font-size:30px;margin-bottom:8px;">🙋</div>まだ回答がありません。<br>上のフォームから回答してください。</div></div>`}
+  </div>`;
+}
+
+function vSummary() {
+  const ev=S.event;
+  const confSlot=S.confirmedSlotId?ev.slots.find(s=>s.id===S.confirmedSlotId):null;
+  return`<div class="container fade-in">
+    <div class="page-title">集計・日程確定</div>
+    <div class="page-sub">${ev.title} · ${S.responses.length}人回答</div>
+    ${confSlot?`<div class="confirmed-banner"><div class="confirmed-icon">✅</div><div><div class="confirmed-label">日程確定済み</div><div class="confirmed-date">${fmtDateFull(confSlot.date)}</div>${confSlot.time?`<div class="confirmed-time">${confSlot.time}</div>`:''}<div style="font-size:11px;color:var(--text-sub);margin-top:4px;">参加者へのメールが送信されました</div></div></div>`:''}
+    <div class="card">
+      <p style="font-size:12px;color:var(--text-sub);margin-bottom:14px;">
+        ◎+○の合計が最も多い列が「ベスト日」として緑でハイライトされます。同数の場合は◎の多い方が優先されます。
+      </p>
+      ${S.responses.length?rSummaryGrid():`<div class="empty-state">回答がまだありません</div>`}
+    </div>
+    ${!S.confirmedSlotId?`<p style="font-size:12px;color:var(--text-sub);text-align:center;margin-bottom:14px;">「この日で確定」ボタンを押すと参加者全員にメールで通知できます。</p>`:''}
+    <button class="btn btn-ghost btn-full" onclick="go('respond')">← 回答ページへ戻る</button>
+  </div>`;
+}
+
+// ════════════════════════════════════════════
+//  Main render
+// ════════════════════════════════════════════
+function render() {
+  const app=document.getElementById('app');
+  let back='',right='';
+  if(S.view==='create') {back=`<button class="header-back" onclick="go('home')">‹ ホーム</button>`;right=`<span class="organizer-badge">主催者</span>`;}
+  if(S.view==='respond'){back=S.event?`<button class="header-back" onclick="go('create')">‹ 作成へ</button>`:'';right=S.isOrganizer?`<span class="organizer-badge">主催者</span>`:'';}
+  if(S.view==='summary'){back=`<button class="header-back" onclick="go('respond')">‹ 回答ページ</button>`;right=`<span class="organizer-badge">主催者モード</span>`;}
+
+  let content='';
+  if(S.view==='home')   content=vHome();
+  if(S.view==='create') content=vCreate();
+  if(S.view==='respond')content=vRespond();
+  if(S.view==='summary')content=vSummary();
+
+  app.innerHTML=`
+    <header class="header">
+      ${back||'<div></div>'}
+      <div class="logo">YOTEI</div>
+      ${right||'<div></div>'}
+    </header>
+    ${content}
+    ${rConfirmModal()}
+    ${rDeadlineModal()}
+  `;
+}
+
+render();
+</script>
+</body>
+</html>
