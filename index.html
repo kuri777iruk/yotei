@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YOTEI — 日程調整</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #F5F5F7;
@@ -439,6 +440,89 @@ const MARK_MAP = {};
 MARKS.forEach(m => MARK_MAP[m.val] = m);
 
 // ════════════════════════════════════════════
+//  Supabase 設定
+// ════════════════════════════════════════════
+const SUPABASE_URL = 'https://ojgnqoqsuapcpxwqxlfz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_f6i2oYp3vbmEPCTlZM4_Vg_o5QOWFp2';
+
+let supabase = null;
+try {
+  supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+} catch(e) { console.warn('Supabase init failed:', e); }
+
+function getEventIdFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('id') || null;
+}
+
+async function dbCreateEvent(eventData) {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.from('events').insert({
+      title: eventData.title, memo: eventData.memo,
+      organizer_email: eventData.organizerEmail,
+      deadline: eventData.deadline || null, slots: eventData.slots
+    }).select('id').single();
+    if (error) { console.error('DB insert event error:', error); return null; }
+    return data.id;
+  } catch(e) { console.error('DB create event failed:', e); return null; }
+}
+
+async function dbLoadEvent(eventId) {
+  if (!supabase || !eventId) return null;
+  try {
+    const { data, error } = await supabase.from('events').select('*').eq('id', eventId).single();
+    if (error) { console.error('DB load event error:', error); return null; }
+    return {
+      id: data.id, title: data.title, memo: data.memo || '',
+      organizerEmail: data.organizer_email || '',
+      deadline: data.deadline || null, slots: data.slots || [],
+      confirmedSlotId: data.confirmed_slot_id || null
+    };
+  } catch(e) { console.error('DB load event failed:', e); return null; }
+}
+
+async function dbLoadResponses(eventId) {
+  if (!supabase || !eventId) return [];
+  try {
+    const { data, error } = await supabase.from('responses')
+      .select('*').eq('event_id', eventId).order('created_at', { ascending: true });
+    if (error) { console.error('DB load responses error:', error); return []; }
+    return data.map(r => ({ dbId: r.id, name: r.name, email: r.email, marks: r.marks || {} }));
+  } catch(e) { console.error('DB load responses failed:', e); return []; }
+}
+
+async function dbSaveResponse(eventId, entry, dbId) {
+  if (!supabase || !eventId) return null;
+  try {
+    if (dbId) {
+      const { data, error } = await supabase.from('responses')
+        .update({ name: entry.name, email: entry.email, marks: entry.marks, updated_at: new Date().toISOString() })
+        .eq('id', dbId).select('id').single();
+      if (error) { console.error('DB update response error:', error); return null; }
+      return data.id;
+    } else {
+      const { data, error } = await supabase.from('responses')
+        .insert({ event_id: eventId, name: entry.name, email: entry.email, marks: entry.marks })
+        .select('id').single();
+      if (error) { console.error('DB insert response error:', error); return null; }
+      return data.id;
+    }
+  } catch(e) { console.error('DB save response failed:', e); return null; }
+}
+
+async function dbDeleteResponse(dbId) {
+  if (!supabase || !dbId) return;
+  try { await supabase.from('responses').delete().eq('id', dbId); } catch(e) { console.error('DB delete response failed:', e); }
+}
+
+async function dbConfirmSlot(eventId, slotId) {
+  if (!supabase || !eventId) return;
+  try { await supabase.from('events').update({ confirmed_slot_id: slotId }).eq('id', eventId); } catch(e) { console.error('DB confirm slot failed:', e); }
+}
+
+
+// ════════════════════════════════════════════
 //  State
 // ════════════════════════════════════════════
 const _now = new Date(); _now.setHours(0,0,0,0);
@@ -455,6 +539,7 @@ let S = {
 
   // event (post-create)
   event: null,
+  eventId: null,        // Supabase UUID
   /* event = { title, memo, organizerEmail, deadline (ISO string|null), slots[] } */
 
   // respond
@@ -583,7 +668,7 @@ function removeTime(ds,val){const arr=S.dateSlots[ds]||[];arr.splice(arr.indexOf
 function setCustomFrom(ds,v){S.customFrom[ds]=v;}
 function setCustomTo(ds,v){S.customTo[ds]=v;}
 
-function doCreateEvent() {
+async function doCreateEvent() {
   // スマホでoninputが確実に発火しないケースに備えDOM直読み
   const titleEl=document.getElementById('inp-title');
   if(titleEl) S.title=titleEl.value;
@@ -608,9 +693,20 @@ function doCreateEvent() {
   S.curName='';S.curEmail='';S.curMarks={};S.editIdx=-1;
   S.responses=[];S.confirmedSlotId=null;S.confirmModalSlotId=null;
   S.deadlineExpiredModal=false;S.isOrganizer=true;
-  // ブラウザに一時保存（DB未実装の間）
+  // Supabase にイベント保存
+  const dbEventId = await dbCreateEvent(S.event);
+  if (dbEventId) {
+    S.eventId = dbEventId;
+    const newUrl = window.location.origin + window.location.pathname + '?id=' + dbEventId;
+    window.history.replaceState(null, '', newUrl);
+    toast('✓ イベントをデータベースに保存しました');
+  } else {
+    toast('⚠ DB保存失敗。ローカルに一時保存します');
+  }
+  // ローカルにもバックアップ保存
   try {
     localStorage.setItem('yotei_event', JSON.stringify(S.event));
+    localStorage.setItem('yotei_eventId', S.eventId || '');
     localStorage.setItem('yotei_responses', JSON.stringify([]));
     localStorage.setItem('yotei_isOrganizer', '1');
   } catch(e) {}
@@ -624,24 +720,41 @@ function doCreateEvent() {
 function setMark(slotId,val) {
   if(S.curMarks[slotId]===val)delete S.curMarks[slotId];else S.curMarks[slotId]=val;render();
 }
-function submitResponse() {
+async function submitResponse() {
   if(!S.curName.trim()){toast('お名前を入力してください');return;}
   if(!S.curEmail.trim()){toast('メールアドレスを入力してください');return;}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.curEmail.trim())){toast('正しいメールアドレスを入力してください');return;}
   for(const s of S.event.slots){if(!S.curMarks[s.id])S.curMarks[s.id]='×';}
   const entry={name:S.curName.trim(),email:S.curEmail.trim(),marks:{...S.curMarks}};
-  if(S.editIdx>=0){S.responses[S.editIdx]=entry;S.editIdx=-1;toast('✓ 回答を更新しました');}
-  else{S.responses.push(entry);toast('✓ 回答しました！');}
+  if(S.editIdx>=0){
+    const existingDbId = S.responses[S.editIdx]?.dbId || null;
+    entry.dbId = existingDbId;
+    S.responses[S.editIdx]=entry;
+    if(S.eventId) await dbSaveResponse(S.eventId, entry, existingDbId);
+    S.editIdx=-1;toast('✓ 回答を更新しました');
+  } else {
+    if(S.eventId) {
+      const newDbId = await dbSaveResponse(S.eventId, entry, null);
+      if(newDbId) entry.dbId = newDbId;
+    }
+    S.responses.push(entry);toast('✓ 回答しました！');
+  }
+  try { localStorage.setItem('yotei_responses', JSON.stringify(S.responses)); } catch(e) {}
   S.curName='';S.curEmail='';S.curMarks={};render();
 }
+
 function editResponse(i) {
   const r=S.responses[i];S.curName=r.name;S.curEmail=r.email;S.curMarks={...r.marks};S.editIdx=i;render();
   setTimeout(()=>{document.getElementById('inp-name')?.scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('inp-name')?.focus();},50);
 }
-function deleteResponse(i) {
+async function deleteResponse(i) {
+  const dbId = S.responses[i]?.dbId;
+  if(dbId) await dbDeleteResponse(dbId);
   S.responses.splice(i,1);
+  try { localStorage.setItem('yotei_responses', JSON.stringify(S.responses)); } catch(e) {}
   if(S.editIdx===i){S.editIdx=-1;S.curName='';S.curEmail='';S.curMarks={};}render();
 }
+
 function cancelEdit(){S.editIdx=-1;S.curName='';S.curEmail='';S.curMarks={};render();}
 
 // ════════════════════════════════════════════
@@ -650,14 +763,15 @@ function cancelEdit(){S.editIdx=-1;S.curName='';S.curEmail='';S.curMarks={};rend
 function openConfirmModal(slotId){S.confirmModalSlotId=slotId;render();}
 function closeModal(){S.confirmModalSlotId=null;render();}
 
-function sendConfirmation() {
+async function sendConfirmation() {
   const slot=S.event.slots.find(s=>s.id===S.confirmModalSlotId);if(!slot)return;
   const emails=S.responses.map(r=>r.email).filter(Boolean);
   const dateStr=fmtDateFull(slot.date)+(slot.time?' '+slot.time:'（終日）');
-  const subject=encodeURIComponent(`【確定】${S.event.title} の日程が決まりました`);
-  const body=encodeURIComponent(`${S.event.title} の日程が確定いたしました。\n\n■ 確定日時\n${dateStr}\n\nご参加をよろしくお願いいたします。\n\n---\nYOTEI 日程調整ツール`);
-  const mailto=`mailto:?bcc=${encodeURIComponent(emails.join(','))}&subject=${subject}&body=${body}`;
+  const subject=encodeURIComponent('【確定】'+S.event.title+' の日程が決まりました');
+  const body=encodeURIComponent(S.event.title+' の日程が確定いたしました。\n\n■ 確定日時\n'+dateStr+'\n\nご参加をよろしくお願いいたします。\n\n---\nYOTEI 日程調整ツール');
+  const mailto='mailto:?bcc='+encodeURIComponent(emails.join(','))+'&subject='+subject+'&body='+body;
   S.confirmedSlotId=S.confirmModalSlotId;S.confirmModalSlotId=null;
+  if(S.eventId) await dbConfirmSlot(S.eventId, S.confirmedSlotId);
   window.location.href=mailto;
   toast('✓ 日程確定。メーラーが開きます。');render();
 }
@@ -946,10 +1060,7 @@ function vConfirm() {
       </div>
     </div>
 
-    <div class="card" style="background:var(--primary-lt);border:1.5px solid var(--primary);">
-      <p style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:4px;">💾 ブラウザに一時保存済み</p>
-      <p style="font-size:11px;color:var(--text-sub);">このブラウザを閉じても内容は保持されます。データベース連携後は共有URLが発行されます。</p>
-    </div>
+    ${S.eventId?`<div class="card" style="background:rgba(52,199,89,.08);border:1.5px solid rgba(52,199,89,.3);"><p style="font-size:12px;color:var(--c-success);font-weight:600;margin-bottom:4px;">✅ データベースに保存済み</p><p style="font-size:11px;color:var(--text-sub);">以下の共有URLを参加者に送ってください。</p><div class="share-box" style="margin-top:8px;"><span class="share-url" id="share-url-confirm">${window.location.origin+window.location.pathname+'?id='+S.eventId}</span><button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('share-url-confirm').textContent).then(()=>toast('✓ URLをコピーしました'))">コピー</button></div></div>`:`<div class="card" style="background:var(--primary-lt);border:1.5px solid var(--primary);"><p style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:4px;">💾 ローカル保存済み</p><p style="font-size:11px;color:var(--text-sub);">DB接続が利用できないためローカルに保存されています。</p></div>`}
 
     <button class="btn btn-primary btn-full" onclick="go('respond')" style="margin-bottom:10px;">
       回答ページへ進む →
@@ -1004,10 +1115,7 @@ function vRespond() {
       </div>
       <div class="divider"></div>
       <p class="section-label" style="margin-bottom:8px;">参加者に共有するURL</p>
-      <div class="share-box">
-        <span class="share-url">https://yotei.app/e/abc123xyz</span>
-        <button class="btn btn-ghost btn-sm" onclick="toast('✓ URLをコピーしました')">コピー</button>
-      </div>
+      ${S.eventId?`<div class="share-box"><span class="share-url" id="share-url-respond">${window.location.origin+window.location.pathname+'?id='+S.eventId}</span><button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('share-url-respond').textContent).then(()=>toast('✓ URLをコピーしました'))">コピー</button></div>`:`<div class="share-box"><span class="share-url" style="color:var(--c-triangle);">⚠ DB未接続のため共有URLを発行できません</span></div>`}
     </div>
 
     <div class="card" style="padding:14px 22px;">
@@ -1065,12 +1173,28 @@ function vRespond() {
   </div>`;
 }
 
+async function refreshResponses() {
+  if (!S.eventId || !supabase) { toast('DB未接続です'); return; }
+  toast('🔄 最新データを取得中...');
+  const resps = await dbLoadResponses(S.eventId);
+  if (resps) { S.responses = resps; }
+  const ev = await dbLoadEvent(S.eventId);
+  if (ev && ev.confirmedSlotId) { S.confirmedSlotId = ev.confirmedSlotId; }
+  toast('✓ 最新データに更新しました');
+  render();
+}
+
 function vSummary() {
   const ev=S.event;
   const confSlot=S.confirmedSlotId?ev.slots.find(s=>s.id===S.confirmedSlotId):null;
   return`<div class="container fade-in">
-    <div class="page-title">集計・日程確定</div>
-    <div class="page-sub">${ev.title} · ${S.responses.length}人回答</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+      <div>
+        <div class="page-title">集計・日程確定</div>
+        <div class="page-sub">${ev.title} · ${S.responses.length}人回答</div>
+      </div>
+      ${S.eventId?`<button class="btn btn-ghost btn-sm" onclick="refreshResponses()">🔄 最新に更新</button>`:''}
+    </div>
     ${confSlot?`<div class="confirmed-banner"><div class="confirmed-icon">✅</div><div><div class="confirmed-label">日程確定済み</div><div class="confirmed-date">${fmtDateFull(confSlot.date)}</div>${confSlot.time?`<div class="confirmed-time">${confSlot.time}</div>`:''}<div style="font-size:11px;color:var(--text-sub);margin-top:4px;">参加者へのメールが送信されました</div></div></div>`:''}
     <div class="card">
       <p style="font-size:12px;color:var(--text-sub);margin-bottom:14px;">
@@ -1116,11 +1240,28 @@ function render() {
 // ════════════════════════════════════════════
 //  起動時: localStorage から復元
 // ════════════════════════════════════════════
-(function initFromStorage() {
+async function initApp() {
+  const urlEventId = getEventIdFromURL();
+  if (urlEventId && supabase) {
+    const ev = await dbLoadEvent(urlEventId);
+    if (ev) {
+      S.eventId = ev.id;
+      S.event = { title: ev.title, memo: ev.memo, organizerEmail: ev.organizerEmail, deadline: ev.deadline, slots: ev.slots };
+      S.confirmedSlotId = ev.confirmedSlotId || null;
+      S.responses = await dbLoadResponses(urlEventId);
+      S.isOrganizer = localStorage.getItem('yotei_isOrganizer') === '1'
+                      && localStorage.getItem('yotei_eventId') === urlEventId;
+      S.view = 'respond';
+      startDeadlineWatch();
+      render();
+      return;
+    }
+  }
   try {
     const ev = localStorage.getItem('yotei_event');
-    if (!ev) return;
+    if (!ev) { render(); return; }
     S.event = JSON.parse(ev);
+    S.eventId = localStorage.getItem('yotei_eventId') || null;
     S.responses = JSON.parse(localStorage.getItem('yotei_responses') || '[]');
     S.isOrganizer = localStorage.getItem('yotei_isOrganizer') === '1';
     if (S.event) {
@@ -1128,9 +1269,11 @@ function render() {
       startDeadlineWatch();
     }
   } catch(e) {}
-})();
+  render();
+}
 
-render();
-</script>
+document.getElementById('app').innerHTML = '<div style="text-align:center;padding:80px 20px;"><div style="font-size:40px;margin-bottom:12px;">📅</div><div style="font-size:15px;color:#6E6E73;">読み込み中...</div></div>';
+initApp();
+</script></script>
 </body>
 </html>
