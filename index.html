@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YOTEI — 日程調整</title>
+  <title>YOTEI â æ¥ç¨èª¿æ´</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -413,42 +413,49 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 //  Constants
-// ════════════════════════════════════════════
-const WD = ['日','月','火','水','木','金','土'];
+// ââââââââââââââââââââââââââââââââââââââââââââ
+const WD = ['æ¥','æ','ç«','æ°´','æ¨','é','å'];
 
 const TIME_PRESETS = [
-  { label: '午前前半', value: '9:00〜11:00'  },
-  { label: '午前後半', value: '11:00〜13:00' },
-  { label: '昼',       value: '13:00〜15:00' },
-  { label: '午後前半', value: '15:00〜17:00' },
-  { label: '夕方',     value: '17:00〜19:00' },
-  { label: '夜',       value: '19:00〜21:00' },
+  { label: 'åååå', value: '9:00ã11:00'  },
+  { label: 'ååå¾å', value: '11:00ã13:00' },
+  { label: 'æ¼',       value: '13:00ã15:00' },
+  { label: 'åå¾åå', value: '15:00ã17:00' },
+  { label: 'å¤æ¹',     value: '17:00ã19:00' },
+  { label: 'å¤',       value: '19:00ã21:00' },
 ];
 
-// ◎と○は同じ重み（参加可能 = 1）△は考慮外、×は不可
-// ベスト日 = ◎+○の合計が最多の列
-// タイブレーク = ◎の数が多い列
+// âã¨âã¯åãéã¿ï¼åå å¯è½ = 1ï¼â³ã¯èæ®å¤ãÃã¯ä¸å¯
+// ãã¹ãæ¥ = â+âã®åè¨ãæå¤ã®å
+// ã¿ã¤ãã¬ã¼ã¯ = âã®æ°ãå¤ãå
 const MARKS = [
-  { val: '◎', label: '絶対行きたい！', cls: 'm-best',     dc: 'db', color: '#5856D6', avail: true  },
-  { val: '○', label: '参加できる',     cls: 'm-circle',   dc: 'dc', color: '#34C759', avail: true  },
-  { val: '△', label: '遅れてならOK',  cls: 'm-triangle', dc: 'dt', color: '#FF9F0A', avail: false },
-  { val: '×', label: '参加できない',   cls: 'm-cross',    dc: 'dx', color: '#FF3B30', avail: false },
+  { val: 'â', label: 'çµ¶å¯¾è¡ãããï¼', cls: 'm-best',     dc: 'db', color: '#5856D6', avail: true  },
+  { val: 'â', label: 'åå ã§ãã',     cls: 'm-circle',   dc: 'dc', color: '#34C759', avail: true  },
+  { val: 'â³', label: 'éãã¦ãªãOK',  cls: 'm-triangle', dc: 'dt', color: '#FF9F0A', avail: false },
+  { val: 'Ã', label: 'åå ã§ããªã',   cls: 'm-cross',    dc: 'dx', color: '#FF3B30', avail: false },
 ];
 const MARK_MAP = {};
 MARKS.forEach(m => MARK_MAP[m.val] = m);
 
-// ════════════════════════════════════════════
-//  Supabase 設定
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Supabase è¨­å®
+// ââââââââââââââââââââââââââââââââââââââââââââ
 const SUPABASE_URL = 'https://ojgnqoqsuapcpxwqxlfz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_f6i2oYp3vbmEPCTlZM4_Vg_o5QOWFp2';
 
 let _sb = null;
 try {
-  supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+  if (typeof window.supabase !== 'undefined') {
+    if (typeof window.supabase.from === 'function') {
+      _sb = window.supabase;
+    } else if (typeof window.supabase.createClient === 'function') {
+      _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  }
 } catch(e) { console.warn('Supabase init failed:', e); }
+if (_sb) { console.log('Supabase connected'); } else { console.warn('Supabase NOT connected'); }
 
 function getEventIdFromURL() {
   const params = new URLSearchParams(window.location.search);
@@ -522,9 +529,9 @@ async function dbConfirmSlot(eventId, slotId) {
 }
 
 
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 //  State
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 const _now = new Date(); _now.setHours(0,0,0,0);
 
 let S = {
@@ -552,9 +559,9 @@ let S = {
   isOrganizer: false,  // true = this browser created the event
 };
 
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 //  Deadline watcher
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 let _dlInterval = null;
 let _dlNotified = false;
 
@@ -581,27 +588,27 @@ function goSummaryFromDeadline() {
   go('summary');
 }
 function notifyOrganizerEmail() {
-  if (!S.event.organizerEmail) { toast('主催者メールが未設定です'); return; }
-  const subject = encodeURIComponent(`【YOTEI】${S.event.title} の回答期限になりました`);
+  if (!S.event.organizerEmail) { toast('ä¸»å¬èã¡ã¼ã«ãæªè¨­å®ã§ã'); return; }
+  const subject = encodeURIComponent(`ãYOTEIã${S.event.title} ã®åç­æéã«ãªãã¾ãã`);
   const body = encodeURIComponent(
-    `${S.event.title} の回答期限が終了しました。\n\n` +
-    `回答者数: ${S.responses.length}名\n\n` +
-    `確定作業を進めてください。\n\n---\nYOTEI 日程調整ツール`
+    `${S.event.title} ã®åç­æéãçµäºãã¾ããã\n\n` +
+    `åç­èæ°: ${S.responses.length}å\n\n` +
+    `ç¢ºå®ä½æ¥­ãé²ãã¦ãã ããã\n\n---\nYOTEI æ¥ç¨èª¿æ´ãã¼ã«`
   );
   window.location.href = `mailto:${encodeURIComponent(S.event.organizerEmail)}?subject=${subject}&body=${body}`;
-  toast('✓ 通知メールをメーラーで送信します');
+  toast('â éç¥ã¡ã¼ã«ãã¡ã¼ã©ã¼ã§éä¿¡ãã¾ã');
 }
 
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 //  Utilities
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function fmtDate(ds) {
   const [y,m,d] = ds.split('-').map(Number);
   return `${m}/${d}(${WD[new Date(y,m-1,d).getDay()]})`;
 }
 function fmtDateFull(ds) {
   const [y,m,d] = ds.split('-').map(Number);
-  return `${y}年${m}月${d}日(${WD[new Date(y,m-1,d).getDay()]})`;
+  return `${y}å¹´${m}æ${d}æ¥(${WD[new Date(y,m-1,d).getDay()]})`;
 }
 function toDS(y,m0,d) {
   return `${y}-${String(m0+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -614,14 +621,14 @@ function getDeadlineStatus() {
   const dl  = new Date(S.event.deadline);
   const now = new Date();
   const diff = dl - now;
-  if (diff <= 0) return { type: 'expired', label: '受付終了', dlStr: dl.toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) };
+  if (diff <= 0) return { type: 'expired', label: 'åä»çµäº', dlStr: dl.toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) };
   const totalMins = Math.floor(diff / 60000);
   const hours = Math.floor(totalMins / 60);
   const mins  = totalMins % 60;
   let label, type;
-  if (hours >= 24) { const days=Math.floor(hours/24); label=`残り${days}日${hours%24}時間`; type='active'; }
-  else if (hours >= 3) { label=`残り${hours}時間${mins}分`; type='active'; }
-  else { label=`残り${hours}時間${mins}分`; type='urgent'; }
+  if (hours >= 24) { const days=Math.floor(hours/24); label=`æ®ã${days}æ¥${hours%24}æé`; type='active'; }
+  else if (hours >= 3) { label=`æ®ã${hours}æé${mins}å`; type='active'; }
+  else { label=`æ®ã${hours}æé${mins}å`; type='urgent'; }
   return { type, label, dlStr: dl.toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) };
 }
 
@@ -637,9 +644,9 @@ function toast(msg) {
 }
 function go(view) { S.view=view; render(); window.scrollTo(0,0); }
 
-// ════════════════════════════════════════════
-//  Actions — create
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Actions â create
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function prevMonth() { if(S.calMonth===0){S.calYear--;S.calMonth=11;}else S.calMonth--; render(); }
 function nextMonth() { if(S.calMonth===11){S.calYear++;S.calMonth=0;}else S.calMonth++; render(); }
 function toggleDate(ds) {
@@ -660,8 +667,8 @@ function removeDate(ds) {
 }
 function addCustomTime(ds) {
   const f=S.customFrom[ds]||'',t=S.customTo[ds]||'';
-  if(!f||!t){toast('開始・終了時刻を入力してください');return;}
-  const val=`${f}〜${t}`;const arr=S.dateSlots[ds]||[];
+  if(!f||!t){toast('éå§ã»çµäºæå»ãå¥åãã¦ãã ãã');return;}
+  const val=`${f}ã${t}`;const arr=S.dateSlots[ds]||[];
   if(!arr.includes(val))arr.push(val);S.dateSlots[ds]=arr;S.customFrom[ds]='';S.customTo[ds]='';render();
 }
 function removeTime(ds,val){const arr=S.dateSlots[ds]||[];arr.splice(arr.indexOf(val),1);render();}
@@ -669,13 +676,13 @@ function setCustomFrom(ds,v){S.customFrom[ds]=v;}
 function setCustomTo(ds,v){S.customTo[ds]=v;}
 
 async function doCreateEvent() {
-  // スマホでoninputが確実に発火しないケースに備えDOM直読み
+  // ã¹ããã§oninputãç¢ºå®ã«çºç«ããªãã±ã¼ã¹ã«åãDOMç´èª­ã¿
   const titleEl=document.getElementById('inp-title');
   if(titleEl) S.title=titleEl.value;
-  if(!S.title.trim()){toast('⚠ イベント名を入力してください');return;}
-  if(!S.selDates.length){toast('⚠ 候補日を1日以上選んでください');return;}
+  if(!S.title.trim()){toast('â  ã¤ãã³ãåãå¥åãã¦ãã ãã');return;}
+  if(!S.selDates.length){toast('â  åè£æ¥ã1æ¥ä»¥ä¸é¸ãã§ãã ãã');return;}
   if(S.organizerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.organizerEmail.trim())){
-    toast('⚠ 主催者メールアドレスの形式が正しくありません');return;
+    toast('â  ä¸»å¬èã¡ã¼ã«ã¢ãã¬ã¹ã®å½¢å¼ãæ­£ããããã¾ãã');return;
   }
   let dl = null;
   if(S.deadlineDate && S.deadlineTime) {
@@ -693,17 +700,17 @@ async function doCreateEvent() {
   S.curName='';S.curEmail='';S.curMarks={};S.editIdx=-1;
   S.responses=[];S.confirmedSlotId=null;S.confirmModalSlotId=null;
   S.deadlineExpiredModal=false;S.isOrganizer=true;
-  // Supabase にイベント保存
+  // Supabase ã«ã¤ãã³ãä¿å­
   const dbEventId = await dbCreateEvent(S.event);
   if (dbEventId) {
     S.eventId = dbEventId;
     const newUrl = window.location.origin + window.location.pathname + '?id=' + dbEventId;
     window.history.replaceState(null, '', newUrl);
-    toast('✓ イベントをデータベースに保存しました');
+    toast('â ã¤ãã³ãããã¼ã¿ãã¼ã¹ã«ä¿å­ãã¾ãã');
   } else {
-    toast('⚠ DB保存失敗。ローカルに一時保存します');
+    toast('â  DBä¿å­å¤±æãã­ã¼ã«ã«ã«ä¸æä¿å­ãã¾ã');
   }
-  // ローカルにもバックアップ保存
+  // ã­ã¼ã«ã«ã«ãããã¯ã¢ããä¿å­
   try {
     localStorage.setItem('yotei_event', JSON.stringify(S.event));
     localStorage.setItem('yotei_eventId', S.eventId || '');
@@ -714,30 +721,30 @@ async function doCreateEvent() {
   go('confirm');
 }
 
-// ════════════════════════════════════════════
-//  Actions — respond
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Actions â respond
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function setMark(slotId,val) {
   if(S.curMarks[slotId]===val)delete S.curMarks[slotId];else S.curMarks[slotId]=val;render();
 }
 async function submitResponse() {
-  if(!S.curName.trim()){toast('お名前を入力してください');return;}
-  if(!S.curEmail.trim()){toast('メールアドレスを入力してください');return;}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.curEmail.trim())){toast('正しいメールアドレスを入力してください');return;}
-  for(const s of S.event.slots){if(!S.curMarks[s.id])S.curMarks[s.id]='×';}
+  if(!S.curName.trim()){toast('ãååãå¥åãã¦ãã ãã');return;}
+  if(!S.curEmail.trim()){toast('ã¡ã¼ã«ã¢ãã¬ã¹ãå¥åãã¦ãã ãã');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.curEmail.trim())){toast('æ­£ããã¡ã¼ã«ã¢ãã¬ã¹ãå¥åãã¦ãã ãã');return;}
+  for(const s of S.event.slots){if(!S.curMarks[s.id])S.curMarks[s.id]='Ã';}
   const entry={name:S.curName.trim(),email:S.curEmail.trim(),marks:{...S.curMarks}};
   if(S.editIdx>=0){
     const existingDbId = S.responses[S.editIdx]?.dbId || null;
     entry.dbId = existingDbId;
     S.responses[S.editIdx]=entry;
     if(S.eventId) await dbSaveResponse(S.eventId, entry, existingDbId);
-    S.editIdx=-1;toast('✓ 回答を更新しました');
+    S.editIdx=-1;toast('â åç­ãæ´æ°ãã¾ãã');
   } else {
     if(S.eventId) {
       const newDbId = await dbSaveResponse(S.eventId, entry, null);
       if(newDbId) entry.dbId = newDbId;
     }
-    S.responses.push(entry);toast('✓ 回答しました！');
+    S.responses.push(entry);toast('â åç­ãã¾ããï¼');
   }
   try { localStorage.setItem('yotei_responses', JSON.stringify(S.responses)); } catch(e) {}
   S.curName='';S.curEmail='';S.curMarks={};render();
@@ -757,36 +764,36 @@ async function deleteResponse(i) {
 
 function cancelEdit(){S.editIdx=-1;S.curName='';S.curEmail='';S.curMarks={};render();}
 
-// ════════════════════════════════════════════
-//  Actions — organizer confirm
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Actions â organizer confirm
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function openConfirmModal(slotId){S.confirmModalSlotId=slotId;render();}
 function closeModal(){S.confirmModalSlotId=null;render();}
 
 async function sendConfirmation() {
   const slot=S.event.slots.find(s=>s.id===S.confirmModalSlotId);if(!slot)return;
   const emails=S.responses.map(r=>r.email).filter(Boolean);
-  const dateStr=fmtDateFull(slot.date)+(slot.time?' '+slot.time:'（終日）');
-  const subject=encodeURIComponent('【確定】'+S.event.title+' の日程が決まりました');
-  const body=encodeURIComponent(S.event.title+' の日程が確定いたしました。\n\n■ 確定日時\n'+dateStr+'\n\nご参加をよろしくお願いいたします。\n\n---\nYOTEI 日程調整ツール');
+  const dateStr=fmtDateFull(slot.date)+(slot.time?' '+slot.time:'ï¼çµæ¥ï¼');
+  const subject=encodeURIComponent('ãç¢ºå®ã'+S.event.title+' ã®æ¥ç¨ãæ±ºã¾ãã¾ãã');
+  const body=encodeURIComponent(S.event.title+' ã®æ¥ç¨ãç¢ºå®ãããã¾ããã\n\nâ  ç¢ºå®æ¥æ\n'+dateStr+'\n\nãåå ããããããé¡ããããã¾ãã\n\n---\nYOTEI æ¥ç¨èª¿æ´ãã¼ã«');
   const mailto='mailto:?bcc='+encodeURIComponent(emails.join(','))+'&subject='+subject+'&body='+body;
   S.confirmedSlotId=S.confirmModalSlotId;S.confirmModalSlotId=null;
   if(S.eventId) await dbConfirmSlot(S.eventId, S.confirmedSlotId);
   window.location.href=mailto;
-  toast('✓ 日程確定。メーラーが開きます。');render();
+  toast('â æ¥ç¨ç¢ºå®ãã¡ã¼ã©ã¼ãéãã¾ãã');render();
 }
 
-// ════════════════════════════════════════════
-//  Render — calendar
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Render â calendar
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function rCalendar() {
   const {calYear:y,calMonth:m}=S;
-  const mns=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const mns=['1æ','2æ','3æ','4æ','5æ','6æ','7æ','8æ','9æ','10æ','11æ','12æ'];
   const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
   let h=`<div class="cal-nav">
-    <button class="cal-arrow" onclick="prevMonth()">‹</button>
-    <span class="cal-month-label">${y}年 ${mns[m]}</span>
-    <button class="cal-arrow" onclick="nextMonth()">›</button>
+    <button class="cal-arrow" onclick="prevMonth()">â¹</button>
+    <span class="cal-month-label">${y}å¹´ ${mns[m]}</span>
+    <button class="cal-arrow" onclick="nextMonth()">âº</button>
   </div><div class="cal-grid">${WD.map(w=>`<div class="cal-wd">${w}</div>`).join('')}`;
   for(let i=0;i<first;i++)h+=`<div class="cal-day empty"></div>`;
   for(let d=1;d<=days;d++){
@@ -800,81 +807,81 @@ function rCalendar() {
   return h+`</div>`;
 }
 
-// ════════════════════════════════════════════
-//  Render — time config
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Render â time config
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function rTimeConfig() {
   if(!S.selDates.length)return'';
   let h=`<div class="time-section">
-    <p class="section-label" style="margin-bottom:4px;">時間帯（任意）</p>
-    <p style="font-size:11px;color:var(--text-sub);margin-bottom:10px;">日付をタップして展開。9:00から2時間おきのプリセットが使えます。</p>`;
+    <p class="section-label" style="margin-bottom:4px;">æéå¸¯ï¼ä»»æï¼</p>
+    <p style="font-size:11px;color:var(--text-sub);margin-bottom:10px;">æ¥ä»ãã¿ãããã¦å±éã9:00ãã2æéããã®ããªã»ãããä½¿ãã¾ãã</p>`;
   for(const ds of S.selDates){
     const times=S.dateSlots[ds]||[],open=S.expandedDate===ds;
     h+=`<div class="time-date-box">
       <div class="time-date-hdr${open?' open':''}" onclick="expandDate('${ds}')">
         <span class="time-date-name">${fmtDate(ds)}</span>
         <span style="display:flex;align-items:center;gap:6px;">
-          ${times.length?`<span class="cnt-pill">${times.length}件</span>`:''}
-          <span class="time-chevron${open?' open':''}">⌄</span>
+          ${times.length?`<span class="cnt-pill">${times.length}ä»¶</span>`:''}
+          <span class="time-chevron${open?' open':''}">â</span>
         </span>
       </div>`;
-    if(times.length)h+=`<div class="added-times">${times.map(t=>`<span class="time-chip">${t}<button class="time-chip-rm" onclick="removeTime('${ds}','${t}')">×</button></span>`).join('')}</div>`;
-    if(open)h+=`<div style="margin-top:10px;"><div class="time-preset-list">${TIME_PRESETS.map(p=>{const on=times.includes(p.value);return`<div class="time-preset-row${on?' on':''}" onclick="togglePreset('${ds}','${p.value}')"><span class="time-preset-range">${p.value}</span><span class="time-preset-label">${p.label}</span><span class="time-check">✓</span></div>`;}).join('')}</div><div class="custom-row"><input class="t-input" type="time" value="${S.customFrom[ds]||''}" oninput="setCustomFrom('${ds}',this.value)"><span style="color:var(--text-sub);font-size:13px;">〜</span><input class="t-input" type="time" value="${S.customTo[ds]||''}" oninput="setCustomTo('${ds}',this.value)"><button class="btn btn-ghost btn-sm" onclick="addCustomTime('${ds}')">追加</button></div></div>`;
+    if(times.length)h+=`<div class="added-times">${times.map(t=>`<span class="time-chip">${t}<button class="time-chip-rm" onclick="removeTime('${ds}','${t}')">Ã</button></span>`).join('')}</div>`;
+    if(open)h+=`<div style="margin-top:10px;"><div class="time-preset-list">${TIME_PRESETS.map(p=>{const on=times.includes(p.value);return`<div class="time-preset-row${on?' on':''}" onclick="togglePreset('${ds}','${p.value}')"><span class="time-preset-range">${p.value}</span><span class="time-preset-label">${p.label}</span><span class="time-check">â</span></div>`;}).join('')}</div><div class="custom-row"><input class="t-input" type="time" value="${S.customFrom[ds]||''}" oninput="setCustomFrom('${ds}',this.value)"><span style="color:var(--text-sub);font-size:13px;">ã</span><input class="t-input" type="time" value="${S.customTo[ds]||''}" oninput="setCustomTo('${ds}',this.value)"><button class="btn btn-ghost btn-sm" onclick="addCustomTime('${ds}')">è¿½å </button></div></div>`;
     h+=`</div>`;
   }
   return h+`</div>`;
 }
 
-// ════════════════════════════════════════════
-//  Render — mark buttons
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Render â mark buttons
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function rMarkCell(slotId) {
   return`<div class="mark-cell">${MARKS.map(mk=>{const on=S.curMarks[slotId]===mk.val;return`<button class="mark-btn ${mk.cls}${on?' on':''}" onclick="setMark('${slotId}','${mk.val}')" title="${mk.label}">${mk.val}</button>`;}).join('')}</div>`;
 }
 
-// ════════════════════════════════════════════
-//  Render — response grid
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Render â response grid
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function rResponseGrid() {
   const slots=S.event.slots;
-  let thead=`<tr><th class="name-col">名前</th>${slots.map(s=>`<th class="slot-col"><div class="slot-date">${s.dateLabel}</div>${s.time?`<div class="slot-time">${s.time}</div>`:''}</th>`).join('')}</tr>`;
+  let thead=`<tr><th class="name-col">åå</th>${slots.map(s=>`<th class="slot-col"><div class="slot-date">${s.dateLabel}</div>${s.time?`<div class="slot-time">${s.time}</div>`:''}</th>`).join('')}</tr>`;
   let tbody='';
   for(let i=0;i<S.responses.length;i++){
     const r=S.responses[i],isEdit=S.editIdx===i;
-    tbody+=`<tr style="${isEdit?'background:rgba(0,122,255,.04)':''}"><td class="name-cell">${r.name}${isEdit?'<br><span style="font-size:9px;color:var(--primary)">編集中</span>':''}</td>`;
+    tbody+=`<tr style="${isEdit?'background:rgba(0,122,255,.04)':''}"><td class="name-cell">${r.name}${isEdit?'<br><span style="font-size:9px;color:var(--primary)">ç·¨éä¸­</span>':''}</td>`;
     for(const s of slots){const v=r.marks[s.id]||'';const mk=MARK_MAP[v];tbody+=`<td><span class="md ${mk?mk.dc:'dx'}">${v}</span></td>`;}
     tbody+=`</tr>`;
   }
-  tbody+=`<tr id="input-row"><td class="name-cell"><em style="font-size:11px;color:var(--primary);">あなた</em></td>${slots.map(s=>`<td style="padding:3px 2px;">${rMarkCell(s.id)}</td>`).join('')}</tr>`;
+  tbody+=`<tr id="input-row"><td class="name-cell"><em style="font-size:11px;color:var(--primary);">ããªã</em></td>${slots.map(s=>`<td style="padding:3px 2px;">${rMarkCell(s.id)}</td>`).join('')}</tr>`;
   return`<div class="grid-scroll"><table class="resp-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
 }
 
-// ════════════════════════════════════════════
-//  Render — summary grid
-//  ベスト日 = ◎+○が最多 / タイブレーク = ◎が最多
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Render â summary grid
+//  ãã¹ãæ¥ = â+âãæå¤ / ã¿ã¤ãã¬ã¼ã¯ = âãæå¤
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function rSummaryGrid() {
   const slots=S.event.slots,resps=S.responses;
-  // 参加可能（◎+○）の合計でスコア算出
-  const availCounts = slots.map(s => resps.filter(r=>r.marks[s.id]==='◎'||r.marks[s.id]==='○').length);
-  const bestCounts  = slots.map(s => resps.filter(r=>r.marks[s.id]==='◎').length);
+  // åå å¯è½ï¼â+âï¼ã®åè¨ã§ã¹ã³ã¢ç®åº
+  const availCounts = slots.map(s => resps.filter(r=>r.marks[s.id]==='â'||r.marks[s.id]==='â').length);
+  const bestCounts  = slots.map(s => resps.filter(r=>r.marks[s.id]==='â').length);
   const maxAvail    = Math.max(...availCounts, 0);
-  // ベスト = availが最大 かつ ◎も最大のもの
+  // ãã¹ã = availãæå¤§ ãã¤ âãæå¤§ã®ãã®
   const bestSet = new Set();
   if(maxAvail > 0) {
     const maxBest = Math.max(...slots.filter((_,i)=>availCounts[i]===maxAvail).map((_,j)=>bestCounts[slots.findIndex((s,i)=>availCounts[i]===maxAvail&&j===slots.filter((_,k)=>availCounts[k]===maxAvail).indexOf(slots[i]))]));
     slots.forEach((s,i)=>{ if(availCounts[i]===maxAvail) bestSet.add(s.id); });
   }
 
-  let thead=`<tr><th class="name-col">参加者</th>`;
+  let thead=`<tr><th class="name-col">åå è</th>`;
   for(let i=0;i<slots.length;i++){
     const s=slots[i],isBest=bestSet.has(s.id),isConf=S.confirmedSlotId===s.id;
     thead+=`<th class="${isBest?'best-th':''}">
       <div class="slot-date">${s.dateLabel}</div>
       ${s.time?`<div class="slot-time">${s.time}</div>`:''}
-      ${isConf?`<span class="confirmed-th-badge">✓ 確定済み</span>`:''}
-      ${isBest&&!isConf?`<span class="best-mark">◎+○ ベスト</span>`:''}
-      ${!isConf&&!S.confirmedSlotId?`<button class="col-confirm-btn" onclick="openConfirmModal('${s.id}')">この日で確定</button>`:''}
+      ${isConf?`<span class="confirmed-th-badge">â ç¢ºå®æ¸ã¿</span>`:''}
+      ${isBest&&!isConf?`<span class="best-mark">â+â ãã¹ã</span>`:''}
+      ${!isConf&&!S.confirmedSlotId?`<button class="col-confirm-btn" onclick="openConfirmModal('${s.id}')">ãã®æ¥ã§ç¢ºå®</button>`:''}
     </th>`;
   }
   thead+=`</tr>`;
@@ -889,17 +896,17 @@ function rSummaryGrid() {
     tbody+=`</tr>`;
   }
 
-  tbody+=`<tr class="score-row"><td class="name-cell" style="font-size:11px;color:var(--text-sub);">集計</td>`;
+  tbody+=`<tr class="score-row"><td class="name-cell" style="font-size:11px;color:var(--text-sub);">éè¨</td>`;
   for(let i=0;i<slots.length;i++){
     const s=slots[i];const cnt={};
     MARKS.forEach(mk=>{cnt[mk.val]=resps.filter(r=>r.marks[s.id]===mk.val).length;});
     const ac=availCounts[i];
     tbody+=`<td class="${bestSet.has(s.id)?'best-td':''}">
-      <div style="font-size:11px;font-weight:800;color:var(--primary);margin-bottom:3px;">参加可${ac}人</div>
-      <span class="score-badge sb-b">◎${cnt['◎']}</span>
-      <span class="score-badge sb-c">○${cnt['○']}</span>
-      <span class="score-badge sb-t">△${cnt['△']}</span>
-      <span class="score-badge sb-x">×${cnt['×']}</span>
+      <div style="font-size:11px;font-weight:800;color:var(--primary);margin-bottom:3px;">åå å¯${ac}äºº</div>
+      <span class="score-badge sb-b">â${cnt['â']}</span>
+      <span class="score-badge sb-c">â${cnt['â']}</span>
+      <span class="score-badge sb-t">â³${cnt['â³']}</span>
+      <span class="score-badge sb-x">Ã${cnt['Ã']}</span>
     </td>`;
   }
   tbody+=`</tr>`;
@@ -907,70 +914,70 @@ function rSummaryGrid() {
   return`<div class="grid-scroll"><table class="sum-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
 }
 
-// ════════════════════════════════════════════
-//  Render — confirm modal
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Render â confirm modal
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function rConfirmModal() {
   if(!S.confirmModalSlotId)return'';
   const slot=S.event.slots.find(s=>s.id===S.confirmModalSlotId);if(!slot)return'';
   return`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
-    <div class="modal-title">📅 日程を確定しますか？</div>
-    <div class="modal-sub">以下の日程で確定し、参加者全員にメールで通知します。<br>内容を確認のうえ、「了承・メール送信」を押してください。</div>
+    <div class="modal-title">ð æ¥ç¨ãç¢ºå®ãã¾ããï¼</div>
+    <div class="modal-sub">ä»¥ä¸ã®æ¥ç¨ã§ç¢ºå®ããåå èå¨å¡ã«ã¡ã¼ã«ã§éç¥ãã¾ãã<br>åå®¹ãç¢ºèªã®ããããäºæ¿ã»ã¡ã¼ã«éä¿¡ããæ¼ãã¦ãã ããã</div>
     <div class="modal-slot-box">
       <div class="modal-slot-date">${fmtDateFull(slot.date)}</div>
-      <div class="modal-slot-time">${slot.time||'終日'}</div>
+      <div class="modal-slot-time">${slot.time||'çµæ¥'}</div>
     </div>
-    <p class="section-label" style="margin-bottom:10px;">通知先 (${S.responses.length}人)</p>
+    <p class="section-label" style="margin-bottom:10px;">éç¥å (${S.responses.length}äºº)</p>
     <div class="modal-recipients">
-      ${S.responses.length===0?`<p style="font-size:12px;color:var(--text-sub);text-align:center;padding:10px;">回答者がいません</p>`:
-        S.responses.map(r=>{const mk=MARK_MAP[r.marks[slot.id]];return`<div class="modal-recipient"><span class="md ${mk?mk.dc:'dx'}" style="font-size:16px;min-width:20px;">${r.marks[slot.id]||'—'}</span><div style="flex:1;min-width:0;"><div class="rname">${r.name}</div><div class="remail">${r.email}</div></div></div>`;}).join('')}
+      ${S.responses.length===0?`<p style="font-size:12px;color:var(--text-sub);text-align:center;padding:10px;">åç­èããã¾ãã</p>`:
+        S.responses.map(r=>{const mk=MARK_MAP[r.marks[slot.id]];return`<div class="modal-recipient"><span class="md ${mk?mk.dc:'dx'}" style="font-size:16px;min-width:20px;">${r.marks[slot.id]||'â'}</span><div style="flex:1;min-width:0;"><div class="rname">${r.name}</div><div class="remail">${r.email}</div></div></div>`;}).join('')}
     </div>
     <div class="modal-actions">
-      <button class="btn btn-danger btn-sm" onclick="closeModal()">キャンセル</button>
-      <button class="btn btn-confirm" onclick="sendConfirmation()">✓ 了承・メール送信</button>
+      <button class="btn btn-danger btn-sm" onclick="closeModal()">ã­ã£ã³ã»ã«</button>
+      <button class="btn btn-confirm" onclick="sendConfirmation()">â äºæ¿ã»ã¡ã¼ã«éä¿¡</button>
     </div>
-    <p class="modal-note">※ 端末のメールアプリが開きます。送信ボタンで参加者全員へ通知されます。</p>
+    <p class="modal-note">â» ç«¯æ«ã®ã¡ã¼ã«ã¢ããªãéãã¾ããéä¿¡ãã¿ã³ã§åå èå¨å¡ã¸éç¥ããã¾ãã</p>
   </div></div>`;
 }
 
-// ════════════════════════════════════════════
-//  Render — deadline expired modal（主催者向け通知）
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  Render â deadline expired modalï¼ä¸»å¬èåãéç¥ï¼
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function rDeadlineModal() {
   if(!S.deadlineExpiredModal)return'';
   return`<div class="modal-overlay"><div class="notif-modal">
-    <div class="notif-icon">📋</div>
-    <div class="notif-title">回答期限になりました</div>
-    <div class="notif-sub">参加者の回答が締め切られました。<br>集計結果を確認して、日程を確定しましょう。</div>
-    <div class="notif-count">${S.responses.length}人</div>
-    <div class="notif-count-label">が回答しました</div>
+    <div class="notif-icon">ð</div>
+    <div class="notif-title">åç­æéã«ãªãã¾ãã</div>
+    <div class="notif-sub">åå èã®åç­ãç· ãåããã¾ããã<br>éè¨çµæãç¢ºèªãã¦ãæ¥ç¨ãç¢ºå®ãã¾ãããã</div>
+    <div class="notif-count">${S.responses.length}äºº</div>
+    <div class="notif-count-label">ãåç­ãã¾ãã</div>
     <div class="notif-actions">
       ${S.event.organizerEmail?`<button class="btn btn-ghost btn-full" onclick="notifyOrganizerEmail()">
-        📧 自分（主催者）へ通知メール送信
+        ð§ èªåï¼ä¸»å¬èï¼ã¸éç¥ã¡ã¼ã«éä¿¡
       </button>`:''}
       <button class="btn btn-confirm btn-full" onclick="goSummaryFromDeadline()">
-        集計・確定へ進む →
+        éè¨ã»ç¢ºå®ã¸é²ã â
       </button>
-      <button class="btn btn-sm" style="background:none;color:var(--text-sub);font-size:12px;" onclick="closeDeadlineModal()">後で確認する</button>
+      <button class="btn btn-sm" style="background:none;color:var(--text-sub);font-size:12px;" onclick="closeDeadlineModal()">å¾ã§ç¢ºèªãã</button>
     </div>
   </div></div>`;
 }
 
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 //  Views
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function vHome() {
   return`<div class="container fade-in">
     <div class="hero">
-      <div class="hero-e">📅</div>
-      <h1>日程調整を、<br>もっと直感的に。</h1>
-      <p>カレンダーをタップするだけで候補日を選択。優先度マーク◎○△×で細かい意思表示も可能。</p>
-      <button class="btn btn-primary" style="font-size:16px;padding:14px 34px;border-radius:16px;" onclick="go('create')">イベントを作る →</button>
+      <div class="hero-e">ð</div>
+      <h1>æ¥ç¨èª¿æ´ãã<br>ãã£ã¨ç´æçã«ã</h1>
+      <p>ã«ã¬ã³ãã¼ãã¿ããããã ãã§åè£æ¥ãé¸æãåªååº¦ãã¼ã¯âââ³Ãã§ç´°ããææè¡¨ç¤ºãå¯è½ã</p>
+      <button class="btn btn-primary" style="font-size:16px;padding:14px 34px;border-radius:16px;" onclick="go('create')">ã¤ãã³ããä½ã â</button>
     </div>
     <div class="feat-grid">
-      <div class="feat-card"><div class="feat-e">📆</div><div class="feat-t">カレンダー選択</div><div class="feat-d">タップで複数日をすばやく選択。コピペ不要。</div></div>
-      <div class="feat-card"><div class="feat-e">⭐</div><div class="feat-t">4段階優先度</div><div class="feat-d">◎絶対ヶ○参加・△遅刻OK・×不可で意思表示</div></div>
-      <div class="feat-card"><div class="feat-e">🔒</div><div class="feat-t">期限オートロック</div><div class="feat-d">期限後は自動締切。主催者へ通知して確定作業へ。</div></div>
+      <div class="feat-card"><div class="feat-e">ð</div><div class="feat-t">ã«ã¬ã³ãã¼é¸æ</div><div class="feat-d">ã¿ããã§è¤æ°æ¥ããã°ããé¸æãã³ããä¸è¦ã</div></div>
+      <div class="feat-card"><div class="feat-e">â­</div><div class="feat-t">4æ®µéåªååº¦</div><div class="feat-d">âçµ¶å¯¾ã¶âåå ã»â³éå»OKã»Ãä¸å¯ã§ææè¡¨ç¤º</div></div>
+      <div class="feat-card"><div class="feat-e">ð</div><div class="feat-t">æéãªã¼ãã­ãã¯</div><div class="feat-d">æéå¾ã¯èªåç· åãä¸»å¬èã¸éç¥ãã¦ç¢ºå®ä½æ¥­ã¸ã</div></div>
     </div>
   </div>`;
 }
@@ -978,95 +985,95 @@ function vHome() {
 function vCreate() {
   const ok=S.title.trim()&&S.selDates.length;
   return`<div class="container fade-in">
-    <div class="page-title">イベントを作成</div>
-    <div class="page-sub">情報を入力して候補日を選択してください</div>
+    <div class="page-title">ã¤ãã³ããä½æ</div>
+    <div class="page-sub">æå ±ãå¥åãã¦åè£æ¥ãé¸æãã¦ãã ãã</div>
 
     <div class="card">
-      <p class="section-label">基本情報</p>
+      <p class="section-label">åºæ¬æå ±</p>
       <div class="form-group">
-        <input class="input" id="inp-title" type="text" placeholder="イベント名（例：チームランチ）"
+        <input class="input" id="inp-title" type="text" placeholder="ã¤ãã³ãåï¼ä¾ï¼ãã¼ã ã©ã³ãï¼"
           value="${S.title}" oninput="S.title=this.value" onchange="S.title=this.value">
       </div>
       <div class="form-group">
-        <input class="input" type="text" placeholder="メモ・備考（任意）"
+        <input class="input" type="text" placeholder="ã¡ã¢ã»åèï¼ä»»æï¼"
           value="${S.memo}" oninput="S.memo=this.value">
       </div>
       <div class="form-group" style="margin-bottom:0;">
-        <input class="input" type="email" placeholder="主催者メールアドレス（回答期限通知に使用・任意）"
+        <input class="input" type="email" placeholder="ä¸»å¬èã¡ã¼ã«ã¢ãã¬ã¹ï¼åç­æééç¥ã«ä½¿ç¨ã»ä»»æï¼"
           value="${S.organizerEmail}" oninput="S.organizerEmail=this.value">
       </div>
     </div>
 
     <div class="card">
-      <p class="section-label">回答期限（オートロック）</p>
+      <p class="section-label">åç­æéï¼ãªã¼ãã­ãã¯ï¼</p>
       <p style="font-size:12px;color:var(--text-sub);margin-bottom:12px;">
-        設定すると、期限後はリンクが自動的に締め切られます。期限になると主催者に通知が届きます。
+        è¨­å®ããã¨ãæéå¾ã¯ãªã³ã¯ãèªåçã«ç· ãåããã¾ããæéã«ãªãã¨ä¸»å¬èã«éç¥ãå±ãã¾ãã
       </p>
       <div class="form-row">
         <div class="form-group">
-          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">締切日</label>
+          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">ç· åæ¥</label>
           <input class="input" type="date" value="${S.deadlineDate}" oninput="S.deadlineDate=this.value"
             min="${toDS(_now.getFullYear(),_now.getMonth(),_now.getDate())}">
         </div>
         <div class="form-group">
-          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">締切時刻</label>
+          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">ç· åæå»</label>
           <input class="input" type="time" value="${S.deadlineTime}" oninput="S.deadlineTime=this.value">
         </div>
       </div>
       ${S.deadlineDate?`<p style="font-size:11px;color:var(--primary);margin-top:-6px;">
-        🔒 ${S.deadlineDate.replace(/-/g,'/')} ${S.deadlineTime||'23:59'} に自動締切
+        ð ${S.deadlineDate.replace(/-/g,'/')} ${S.deadlineTime||'23:59'} ã«èªåç· å
       </p>`:''}
     </div>
 
     <div class="card">
-      <p class="section-label">候補日を選ぶ${S.selDates.length?` <span style="color:var(--primary);font-weight:700;text-transform:none;letter-spacing:0;">— ${S.selDates.length}日選択中</span>`:''}</p>
+      <p class="section-label">åè£æ¥ãé¸ã¶${S.selDates.length?` <span style="color:var(--primary);font-weight:700;text-transform:none;letter-spacing:0;">â ${S.selDates.length}æ¥é¸æä¸­</span>`:''}</p>
       ${rCalendar()}
-      ${S.selDates.length?`<div class="date-tags">${S.selDates.map(ds=>{const n=(S.dateSlots[ds]||[]).length;return`<span class="date-tag" onclick="expandDate('${ds}')">${fmtDate(ds)}${n?`<span class="cnt-pill">${n}件</span>`:''}<span class="rm" onclick="event.stopPropagation();removeDate('${ds}')">×</span></span>`;}).join('')}</div>`:''}
+      ${S.selDates.length?`<div class="date-tags">${S.selDates.map(ds=>{const n=(S.dateSlots[ds]||[]).length;return`<span class="date-tag" onclick="expandDate('${ds}')">${fmtDate(ds)}${n?`<span class="cnt-pill">${n}ä»¶</span>`:''}<span class="rm" onclick="event.stopPropagation();removeDate('${ds}')">Ã</span></span>`;}).join('')}</div>`:''}
       ${rTimeConfig()}
     </div>
 
-    <button class="btn btn-primary btn-full" onclick="doCreateEvent()">リンクを生成して次へ →</button>
-    ${!ok?`<p style="text-align:center;font-size:11px;color:var(--text-sub);margin-top:7px;">${!S.title.trim()?'イベント名':'候補日'}を入力してください</p>`:''}
+    <button class="btn btn-primary btn-full" onclick="doCreateEvent()">ãªã³ã¯ãçæãã¦æ¬¡ã¸ â</button>
+    ${!ok?`<p style="text-align:center;font-size:11px;color:var(--text-sub);margin-top:7px;">${!S.title.trim()?'ã¤ãã³ãå':'åè£æ¥'}ãå¥åãã¦ãã ãã</p>`:''}
   </div>`;
 }
 
-// ════════════════════════════════════════════
-//  View — confirm (イベント作成後の確認画面)
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  View â confirm (ã¤ãã³ãä½æå¾ã®ç¢ºèªç»é¢)
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function vConfirm() {
   const ev=S.event;
   const dateDays=[...new Set(ev.slots.map(s=>s.date))];
   return`<div class="container fade-in">
-    <div class="page-title">✅ 作成完了！内容を確認</div>
-    <div class="page-sub">以下の内容でイベントを作成しました</div>
+    <div class="page-title">â ä½æå®äºï¼åå®¹ãç¢ºèª</div>
+    <div class="page-sub">ä»¥ä¸ã®åå®¹ã§ã¤ãã³ããä½æãã¾ãã</div>
 
     <div class="card">
-      <p class="section-label">イベント情報</p>
+      <p class="section-label">ã¤ãã³ãæå ±</p>
       <div style="font-size:18px;font-weight:700;margin-bottom:6px;">${ev.title}</div>
       ${ev.memo?`<div style="font-size:14px;color:var(--text-sub);margin-bottom:6px;">${ev.memo}</div>`:''}
-      ${ev.organizerEmail?`<div style="font-size:12px;color:var(--text-sub);">📧 主催者: ${ev.organizerEmail}</div>`:''}
-      ${ev.deadline?`<div style="font-size:13px;color:var(--primary);margin-top:6px;">🔒 回答期限: ${new Date(ev.deadline).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`:''}
+      ${ev.organizerEmail?`<div style="font-size:12px;color:var(--text-sub);">ð§ ä¸»å¬è: ${ev.organizerEmail}</div>`:''}
+      ${ev.deadline?`<div style="font-size:13px;color:var(--primary);margin-top:6px;">ð åç­æé: ${new Date(ev.deadline).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`:''}
     </div>
 
     <div class="card">
-      <p class="section-label">候補日（${dateDays.length}日・${ev.slots.length}枠）</p>
+      <p class="section-label">åè£æ¥ï¼${dateDays.length}æ¥ã»${ev.slots.length}æ ï¼</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
         ${dateDays.map(d=>{
           const times=ev.slots.filter(s=>s.date===d).map(s=>s.time).filter(Boolean);
           return`<div style="background:var(--primary-lt);color:var(--primary);padding:8px 14px;border-radius:10px;font-size:14px;font-weight:600;line-height:1.5;">
-            ${fmtDate(d)}${times.length?`<br><span style="font-weight:400;font-size:11px;opacity:.85;">${times.join('・')}</span>`:''}
+            ${fmtDate(d)}${times.length?`<br><span style="font-weight:400;font-size:11px;opacity:.85;">${times.join('ã»')}</span>`:''}
           </div>`;
         }).join('')}
       </div>
     </div>
 
-    ${S.eventId?`<div class="card" style="background:rgba(52,199,89,.08);border:1.5px solid rgba(52,199,89,.3);"><p style="font-size:12px;color:var(--c-success);font-weight:600;margin-bottom:4px;">✅ データベースに保存済み</p><p style="font-size:11px;color:var(--text-sub);">以下の共有URLを参加者に送ってください。</p><div class="share-box" style="margin-top:8px;"><span class="share-url" id="share-url-confirm">${window.location.origin+window.location.pathname+'?id='+S.eventId}</span><button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('share-url-confirm').textContent).then(()=>toast('✓ URLをコピーしました'))">コピー</button></div></div>`:`<div class="card" style="background:var(--primary-lt);border:1.5px solid var(--primary);"><p style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:4px;">💾 ローカル保存済み</p><p style="font-size:11px;color:var(--text-sub);">DB接続が利用できないためローカルに保存されています。</p></div>`}
+    ${S.eventId?`<div class="card" style="background:rgba(52,199,89,.08);border:1.5px solid rgba(52,199,89,.3);"><p style="font-size:12px;color:var(--c-success);font-weight:600;margin-bottom:4px;">â ãã¼ã¿ãã¼ã¹ã«ä¿å­æ¸ã¿</p><p style="font-size:11px;color:var(--text-sub);">ä»¥ä¸ã®å±æURLãåå èã«éã£ã¦ãã ããã</p><div class="share-box" style="margin-top:8px;"><span class="share-url" id="share-url-confirm">${window.location.origin+window.location.pathname+'?id='+S.eventId}</span><button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('share-url-confirm').textContent).then(()=>toast('â URLãã³ãã¼ãã¾ãã'))">ã³ãã¼</button></div></div>`:`<div class="card" style="background:var(--primary-lt);border:1.5px solid var(--primary);"><p style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:4px;">ð¾ ã­ã¼ã«ã«ä¿å­æ¸ã¿</p><p style="font-size:11px;color:var(--text-sub);">DBæ¥ç¶ãå©ç¨ã§ããªãããã­ã¼ã«ã«ã«ä¿å­ããã¦ãã¾ãã</p></div>`}
 
     <button class="btn btn-primary btn-full" onclick="go('respond')" style="margin-bottom:10px;">
-      回答ページへ進む →
+      åç­ãã¼ã¸ã¸é²ã â
     </button>
     <button class="btn btn-ghost btn-full" onclick="go('create')">
-      ‹ 内容を修正する
+      â¹ åå®¹ãä¿®æ­£ãã
     </button>
   </div>`;
 }
@@ -1077,15 +1084,15 @@ function vRespond() {
   const locked=isDeadlinePassed();
   const confSlot=S.confirmedSlotId?ev.slots.find(s=>s.id===S.confirmedSlotId):null;
 
-  // 期限切れで参加者（非主催者）の場合はロック画面
+  // æéåãã§åå èï¼éä¸»å¬èï¼ã®å ´åã¯ã­ãã¯ç»é¢
   if(locked && !S.isOrganizer) {
     return`<div class="container fade-in">
       <div class="card">
         <div class="locked-page">
-          <div class="locked-icon">🔒</div>
-          <div class="locked-title">受付終了しました</div>
-          <div class="locked-sub">このイベントへの回答受付は終了しました。<br>日程の確定をしばらくお待ちください。</div>
-          <div class="locked-detail">${dlStatus?.dlStr} をもって締め切りました</div>
+          <div class="locked-icon">ð</div>
+          <div class="locked-title">åä»çµäºãã¾ãã</div>
+          <div class="locked-sub">ãã®ã¤ãã³ãã¸ã®åç­åä»ã¯çµäºãã¾ããã<br>æ¥ç¨ã®ç¢ºå®ããã°ãããå¾ã¡ãã ããã</div>
+          <div class="locked-detail">${dlStatus?.dlStr} ããã£ã¦ç· ãåãã¾ãã</div>
           <p style="font-size:13px;font-weight:700;">${ev.title}</p>
         </div>
       </div>
@@ -1093,94 +1100,94 @@ function vRespond() {
   }
 
   return`<div class="container fade-in">
-    ${confSlot?`<div class="confirmed-banner"><div class="confirmed-icon">✅</div><div><div class="confirmed-label">日程確定済み</div><div class="confirmed-date">${fmtDateFull(confSlot.date)}</div>${confSlot.time?`<div class="confirmed-time">${confSlot.time}</div>`:''}</div></div>`:''}
+    ${confSlot?`<div class="confirmed-banner"><div class="confirmed-icon">â</div><div><div class="confirmed-label">æ¥ç¨ç¢ºå®æ¸ã¿</div><div class="confirmed-date">${fmtDateFull(confSlot.date)}</div>${confSlot.time?`<div class="confirmed-time">${confSlot.time}</div>`:''}</div></div>`:''}
 
     ${dlStatus?`<div class="deadline-banner ${dlStatus.type}">
-      <div class="dl-icon">${dlStatus.type==='expired'?'🔒':dlStatus.type==='urgent'?'⚠️':'⏰'}</div>
+      <div class="dl-icon">${dlStatus.type==='expired'?'ð':dlStatus.type==='urgent'?'â ï¸':'â°'}</div>
       <div>
-        <div class="dl-label ${dlStatus.type}">${dlStatus.type==='expired'?'受付終了':dlStatus.type==='urgent'?'まもなく締切':'回答期限'}</div>
+        <div class="dl-label ${dlStatus.type}">${dlStatus.type==='expired'?'åä»çµäº':dlStatus.type==='urgent'?'ã¾ããªãç· å':'åç­æé'}</div>
         <div class="dl-value">${dlStatus.label}</div>
-        <div class="dl-sub">締切：${dlStatus.dlStr}</div>
+        <div class="dl-sub">ç· åï¼${dlStatus.dlStr}</div>
       </div>
     </div>`:''}
 
     <div class="card">
       <div class="ev-meta-row">
-        <div class="ev-icon">📅</div>
+        <div class="ev-icon">ð</div>
         <div>
           <div class="ev-title">${ev.title}</div>
           ${ev.memo?`<div style="font-size:13px;color:var(--text-sub);margin-top:3px;">${ev.memo}</div>`:''}
-          <div style="font-size:11px;color:var(--text-sub);margin-top:6px;">${ev.slots.length}候補 · ${S.responses.length}人回答済み</div>
+          <div style="font-size:11px;color:var(--text-sub);margin-top:6px;">${ev.slots.length}åè£ Â· ${S.responses.length}äººåç­æ¸ã¿</div>
         </div>
       </div>
       <div class="divider"></div>
-      <p class="section-label" style="margin-bottom:8px;">参加者に共有するURL</p>
-      ${S.eventId?`<div class="share-box"><span class="share-url" id="share-url-respond">${window.location.origin+window.location.pathname+'?id='+S.eventId}</span><button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('share-url-respond').textContent).then(()=>toast('✓ URLをコピーしました'))">コピー</button></div>`:`<div class="share-box"><span class="share-url" style="color:var(--c-triangle);">⚠ DB未接続のため共有URLを発行できません</span></div>`}
+      <p class="section-label" style="margin-bottom:8px;">åå èã«å±æããURL</p>
+      ${S.eventId?`<div class="share-box"><span class="share-url" id="share-url-respond">${window.location.origin+window.location.pathname+'?id='+S.eventId}</span><button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('share-url-respond').textContent).then(()=>toast('â URLãã³ãã¼ãã¾ãã'))">ã³ãã¼</button></div>`:`<div class="share-box"><span class="share-url" style="color:var(--c-triangle);">â  DBæªæ¥ç¶ã®ããå±æURLãçºè¡ã§ãã¾ãã</span></div>`}
     </div>
 
     <div class="card" style="padding:14px 22px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
         <div>
-          <div style="font-size:13px;font-weight:700;">📅 予定を確認しながら入力</div>
-          <div style="font-size:11px;color:var(--text-sub);margin-top:2px;">Googleカレンダーで予定を確認しながら回答できます</div>
+          <div style="font-size:13px;font-weight:700;">ð äºå®ãç¢ºèªããªããå¥å</div>
+          <div style="font-size:11px;color:var(--text-sub);margin-top:2px;">Googleã«ã¬ã³ãã¼ã§äºå®ãç¢ºèªããªããåç­ã§ãã¾ã</div>
         </div>
         <a href="https://calendar.google.com" target="_blank" rel="noopener" class="gcal-btn">
           <svg width="16" height="16" viewBox="0 0 48 48"><path d="M34 6H14C9.6 6 6 9.6 6 14v20c0 4.4 3.6 8 8 8h20c4.4 0 8-3.6 8-8V14c0-4.4-3.6-8-8-8z" fill="#4285F4"/><rect x="14" y="20" width="20" height="16" rx="2" fill="#fff"/><path d="M18 9h12v8H18z" fill="#EA4335"/><circle cx="20" cy="9" r="2" fill="#fff"/><circle cx="28" cy="9" r="2" fill="#fff"/></svg>
-          Googleカレンダーを確認する
+          Googleã«ã¬ã³ãã¼ãç¢ºèªãã
         </a>
       </div>
     </div>
 
     <div class="card" style="padding:14px 22px;">
-      <p class="section-label" style="margin-bottom:10px;">優先度マークの意味</p>
+      <p class="section-label" style="margin-bottom:10px;">åªååº¦ãã¼ã¯ã®æå³</p>
       <div class="legend">
         ${MARKS.map(mk=>`<div class="legend-item"><div class="legend-dot" style="background:${mk.color};">${mk.val}</div><span><b>${mk.val}</b> ${mk.label}</span></div>`).join('')}
       </div>
-      <p style="font-size:11px;color:var(--text-sub);margin-top:10px;">※ <b>◎と○は同じ「参加可能」</b>として集計されます。迷ったとき・特に行きたいときに◎を使ってください。</p>
+      <p style="font-size:11px;color:var(--text-sub);margin-top:10px;">â» <b>âã¨âã¯åããåå å¯è½ã</b>ã¨ãã¦éè¨ããã¾ããè¿·ã£ãã¨ãã»ç¹ã«è¡ãããã¨ãã«âãä½¿ã£ã¦ãã ããã</p>
     </div>
 
     ${locked?`<div class="organizer-only-bar">
-      <div class="org-label">🔒 主催者専用 — 受付は終了しましたが、集計・確定へ進めます</div>
-      <button class="btn btn-success btn-full" onclick="go('summary')">集計・確定へ進む →</button>
+      <div class="org-label">ð ä¸»å¬èå°ç¨ â åä»ã¯çµäºãã¾ããããéè¨ã»ç¢ºå®ã¸é²ãã¾ã</div>
+      <button class="btn btn-success btn-full" onclick="go('summary')">éè¨ã»ç¢ºå®ã¸é²ã â</button>
     </div>`:`<div class="card">
-      <p class="section-label">${S.editIdx>=0?'回答を編集中':'あなたの都合を入力'}</p>
+      <p class="section-label">${S.editIdx>=0?'åç­ãç·¨éä¸­':'ããªãã®é½åãå¥å'}</p>
       <div class="form-group">
-        <input class="input" id="inp-name" type="text" placeholder="お名前（必須）"
+        <input class="input" id="inp-name" type="text" placeholder="ãååï¼å¿é ï¼"
           value="${S.curName}" oninput="S.curName=this.value">
       </div>
       <div class="form-group">
         <input class="input" id="inp-email" type="email"
-          placeholder="メールアドレス（必須 — 日程確定時に通知が届きます）"
+          placeholder="ã¡ã¼ã«ã¢ãã¬ã¹ï¼å¿é  â æ¥ç¨ç¢ºå®æã«éç¥ãå±ãã¾ãï¼"
           value="${S.curEmail}" oninput="S.curEmail=this.value">
       </div>
-      <p style="font-size:11px;color:var(--text-sub);margin-bottom:12px;">各日程の優先度を選んでください。未選択は「×」として扱われます。</p>
+      <p style="font-size:11px;color:var(--text-sub);margin-bottom:12px;">åæ¥ç¨ã®åªååº¦ãé¸ãã§ãã ãããæªé¸æã¯ãÃãã¨ãã¦æ±ããã¾ãã</p>
       ${rResponseGrid()}
       <div style="margin-top:14px;display:flex;gap:10px;">
-        <button class="btn btn-primary btn-full" onclick="submitResponse()">${S.editIdx>=0?'✓ 更新する':'✓ 回答する'}</button>
-        ${S.editIdx>=0?`<button class="btn btn-danger btn-sm" onclick="cancelEdit()">キャンセル</button>`:''}
+        <button class="btn btn-primary btn-full" onclick="submitResponse()">${S.editIdx>=0?'â æ´æ°ãã':'â åç­ãã'}</button>
+        ${S.editIdx>=0?`<button class="btn btn-danger btn-sm" onclick="cancelEdit()">ã­ã£ã³ã»ã«</button>`:''}
       </div>
     </div>`}
 
     ${S.responses.length?`<div class="card">
-      <p class="section-label">${S.responses.length}人の回答</p>
+      <p class="section-label">${S.responses.length}äººã®åç­</p>
       ${S.responses.map((r,i)=>{
-        const bc=ev.slots.filter(s=>r.marks[s.id]==='◎').length;
-        const cc=ev.slots.filter(s=>r.marks[s.id]==='○').length;
-        return`<div class="resp-li"><div><div class="resp-li-name">${r.name}</div><div class="resp-li-sub">${r.email} &nbsp;<span style="color:var(--c-best)">◎${bc}</span><span style="color:var(--c-circle);margin-left:5px;">○${cc}</span></div></div><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="editResponse(${i})">編集</button><button class="btn btn-danger btn-xs" onclick="deleteResponse(${i})">削除</button></div></div>`;
+        const bc=ev.slots.filter(s=>r.marks[s.id]==='â').length;
+        const cc=ev.slots.filter(s=>r.marks[s.id]==='â').length;
+        return`<div class="resp-li"><div><div class="resp-li-name">${r.name}</div><div class="resp-li-sub">${r.email} &nbsp;<span style="color:var(--c-best)">â${bc}</span><span style="color:var(--c-circle);margin-left:5px;">â${cc}</span></div></div><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="editResponse(${i})">ç·¨é</button><button class="btn btn-danger btn-xs" onclick="deleteResponse(${i})">åé¤</button></div></div>`;
       }).join('')}
-      <div style="margin-top:14px;"><button class="btn btn-success btn-full" onclick="go('summary')">集計・確定へ →</button></div>
-    </div>`:`<div class="card"><div class="empty-state"><div style="font-size:30px;margin-bottom:8px;">🙋</div>まだ回答がありません。<br>上のフォームから回答してください。</div></div>`}
+      <div style="margin-top:14px;"><button class="btn btn-success btn-full" onclick="go('summary')">éè¨ã»ç¢ºå®ã¸ â</button></div>
+    </div>`:`<div class="card"><div class="empty-state"><div style="font-size:30px;margin-bottom:8px;">ð</div>ã¾ã åç­ãããã¾ããã<br>ä¸ã®ãã©ã¼ã ããåç­ãã¦ãã ããã</div></div>`}
   </div>`;
 }
 
 async function refreshResponses() {
-  if (!S.eventId || !_sb) { toast('DB未接続です'); return; }
-  toast('🔄 最新データを取得中...');
+  if (!S.eventId || !_sb) { toast('DBæªæ¥ç¶ã§ã'); return; }
+  toast('ð ææ°ãã¼ã¿ãåå¾ä¸­...');
   const resps = await dbLoadResponses(S.eventId);
   if (resps) { S.responses = resps; }
   const ev = await dbLoadEvent(S.eventId);
   if (ev && ev.confirmedSlotId) { S.confirmedSlotId = ev.confirmedSlotId; }
-  toast('✓ 最新データに更新しました');
+  toast('â ææ°ãã¼ã¿ã«æ´æ°ãã¾ãã');
   render();
 }
 
@@ -1190,33 +1197,33 @@ function vSummary() {
   return`<div class="container fade-in">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
       <div>
-        <div class="page-title">集計・日程確定</div>
-        <div class="page-sub">${ev.title} · ${S.responses.length}人回答</div>
+        <div class="page-title">éè¨ã»æ¥ç¨ç¢ºå®</div>
+        <div class="page-sub">${ev.title} Â· ${S.responses.length}äººåç­</div>
       </div>
-      ${S.eventId?`<button class="btn btn-ghost btn-sm" onclick="refreshResponses()">🔄 最新に更新</button>`:''}
+      ${S.eventId?`<button class="btn btn-ghost btn-sm" onclick="refreshResponses()">ð ææ°ã«æ´æ°</button>`:''}
     </div>
-    ${confSlot?`<div class="confirmed-banner"><div class="confirmed-icon">✅</div><div><div class="confirmed-label">日程確定済み</div><div class="confirmed-date">${fmtDateFull(confSlot.date)}</div>${confSlot.time?`<div class="confirmed-time">${confSlot.time}</div>`:''}<div style="font-size:11px;color:var(--text-sub);margin-top:4px;">参加者へのメールが送信されました</div></div></div>`:''}
+    ${confSlot?`<div class="confirmed-banner"><div class="confirmed-icon">â</div><div><div class="confirmed-label">æ¥ç¨ç¢ºå®æ¸ã¿</div><div class="confirmed-date">${fmtDateFull(confSlot.date)}</div>${confSlot.time?`<div class="confirmed-time">${confSlot.time}</div>`:''}<div style="font-size:11px;color:var(--text-sub);margin-top:4px;">åå èã¸ã®ã¡ã¼ã«ãéä¿¡ããã¾ãã</div></div></div>`:''}
     <div class="card">
       <p style="font-size:12px;color:var(--text-sub);margin-bottom:14px;">
-        ◎+○の合計が最も多い列が「ベスト日」として緑でハイライトされます。同数の場合は◎の多い方が優先されます。
+        â+âã®åè¨ãæãå¤ãåãããã¹ãæ¥ãã¨ãã¦ç·ã§ãã¤ã©ã¤ãããã¾ããåæ°ã®å ´åã¯âã®å¤ãæ¹ãåªåããã¾ãã
       </p>
-      ${S.responses.length?rSummaryGrid():`<div class="empty-state">回答がまだありません</div>`}
+      ${S.responses.length?rSummaryGrid():`<div class="empty-state">åç­ãã¾ã ããã¾ãã</div>`}
     </div>
-    ${!S.confirmedSlotId?`<p style="font-size:12px;color:var(--text-sub);text-align:center;margin-bottom:14px;">「この日で確定」ボタンを押すと参加者全員にメールで通知できます。</p>`:''}
-    <button class="btn btn-ghost btn-full" onclick="go('respond')">← 回答ページへ戻る</button>
+    ${!S.confirmedSlotId?`<p style="font-size:12px;color:var(--text-sub);text-align:center;margin-bottom:14px;">ããã®æ¥ã§ç¢ºå®ããã¿ã³ãæ¼ãã¨åå èå¨å¡ã«ã¡ã¼ã«ã§éç¥ã§ãã¾ãã</p>`:''}
+    <button class="btn btn-ghost btn-full" onclick="go('respond')">â åç­ãã¼ã¸ã¸æ»ã</button>
   </div>`;
 }
 
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 //  Main render
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
 function render() {
   const app=document.getElementById('app');
   let back='',right='';
-  if(S.view==='create') {back=`<button class="header-back" onclick="go('home')">‹ ホーム</button>`;right=`<span class="organizer-badge">主催者</span>`;}
-  if(S.view==='confirm'){back=`<button class="header-back" onclick="go('create')">‹ 修正</button>`;right=`<span class="organizer-badge">主催者</span>`;}
-  if(S.view==='respond'){back=S.event?`<button class="header-back" onclick="go('confirm')">‹ 確認へ</button>`:'';right=S.isOrganizer?`<span class="organizer-badge">主催者</span>`:'';}
-  if(S.view==='summary'){back=`<button class="header-back" onclick="go('respond')">‹ 回答ページ</button>`;right=`<span class="organizer-badge">主催者モード</span>`;}
+  if(S.view==='create') {back=`<button class="header-back" onclick="go('home')">â¹ ãã¼ã </button>`;right=`<span class="organizer-badge">ä¸»å¬è</span>`;}
+  if(S.view==='confirm'){back=`<button class="header-back" onclick="go('create')">â¹ ä¿®æ­£</button>`;right=`<span class="organizer-badge">ä¸»å¬è</span>`;}
+  if(S.view==='respond'){back=S.event?`<button class="header-back" onclick="go('confirm')">â¹ ç¢ºèªã¸</button>`:'';right=S.isOrganizer?`<span class="organizer-badge">ä¸»å¬è</span>`:'';}
+  if(S.view==='summary'){back=`<button class="header-back" onclick="go('respond')">â¹ åç­ãã¼ã¸</button>`;right=`<span class="organizer-badge">ä¸»å¬èã¢ã¼ã</span>`;}
 
   let content='';
   if(S.view==='home')   content=vHome();
@@ -1237,9 +1244,9 @@ function render() {
   `;
 }
 
-// ════════════════════════════════════════════
-//  起動時: localStorage から復元
-// ════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââ
+//  èµ·åæ: localStorage ããå¾©å
+// ââââââââââââââââââââââââââââââââââââââââââââ
 async function initApp() {
   const urlEventId = getEventIdFromURL();
   if (urlEventId && _sb) {
@@ -1272,7 +1279,7 @@ async function initApp() {
   render();
 }
 
-document.getElementById('app').innerHTML = '<div style="text-align:center;padding:80px 20px;"><div style="font-size:40px;margin-bottom:12px;">📅</div><div style="font-size:15px;color:#6E6E73;">読み込み中...</div></div>';
+document.getElementById('app').innerHTML = '<div style="text-align:center;padding:80px 20px;"><div style="font-size:40px;margin-bottom:12px;">ð</div><div style="font-size:15px;color:#6E6E73;">èª­ã¿è¾¼ã¿ä¸­...</div></div>';
 initApp();
 </script></script>
 </body>
