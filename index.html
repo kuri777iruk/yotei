@@ -445,7 +445,7 @@ MARKS.forEach(m => MARK_MAP[m.val] = m);
 const SUPABASE_URL = 'https://ojgnqoqsuapcpxwqxlfz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_f6i2oYp3vbmEPCTlZM4_Vg_o5QOWFp2';
 
-let supabase = null;
+let _sb = null;
 try {
   supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 } catch(e) { console.warn('Supabase init failed:', e); }
@@ -456,9 +456,9 @@ function getEventIdFromURL() {
 }
 
 async function dbCreateEvent(eventData) {
-  if (!supabase) return null;
+  if (!_sb) return null;
   try {
-    const { data, error } = await supabase.from('events').insert({
+    const { data, error } = await _sb.from('events').insert({
       title: eventData.title, memo: eventData.memo,
       organizer_email: eventData.organizerEmail,
       deadline: eventData.deadline || null, slots: eventData.slots
@@ -469,9 +469,9 @@ async function dbCreateEvent(eventData) {
 }
 
 async function dbLoadEvent(eventId) {
-  if (!supabase || !eventId) return null;
+  if (!_sb || !eventId) return null;
   try {
-    const { data, error } = await supabase.from('events').select('*').eq('id', eventId).single();
+    const { data, error } = await _sb.from('events').select('*').eq('id', eventId).single();
     if (error) { console.error('DB load event error:', error); return null; }
     return {
       id: data.id, title: data.title, memo: data.memo || '',
@@ -483,9 +483,9 @@ async function dbLoadEvent(eventId) {
 }
 
 async function dbLoadResponses(eventId) {
-  if (!supabase || !eventId) return [];
+  if (!_sb || !eventId) return [];
   try {
-    const { data, error } = await supabase.from('responses')
+    const { data, error } = await _sb.from('responses')
       .select('*').eq('event_id', eventId).order('created_at', { ascending: true });
     if (error) { console.error('DB load responses error:', error); return []; }
     return data.map(r => ({ dbId: r.id, name: r.name, email: r.email, marks: r.marks || {} }));
@@ -493,16 +493,16 @@ async function dbLoadResponses(eventId) {
 }
 
 async function dbSaveResponse(eventId, entry, dbId) {
-  if (!supabase || !eventId) return null;
+  if (!_sb || !eventId) return null;
   try {
     if (dbId) {
-      const { data, error } = await supabase.from('responses')
+      const { data, error } = await _sb.from('responses')
         .update({ name: entry.name, email: entry.email, marks: entry.marks, updated_at: new Date().toISOString() })
         .eq('id', dbId).select('id').single();
       if (error) { console.error('DB update response error:', error); return null; }
       return data.id;
     } else {
-      const { data, error } = await supabase.from('responses')
+      const { data, error } = await _sb.from('responses')
         .insert({ event_id: eventId, name: entry.name, email: entry.email, marks: entry.marks })
         .select('id').single();
       if (error) { console.error('DB insert response error:', error); return null; }
@@ -512,13 +512,13 @@ async function dbSaveResponse(eventId, entry, dbId) {
 }
 
 async function dbDeleteResponse(dbId) {
-  if (!supabase || !dbId) return;
-  try { await supabase.from('responses').delete().eq('id', dbId); } catch(e) { console.error('DB delete response failed:', e); }
+  if (!_sb || !dbId) return;
+  try { await _sb.from('responses').delete().eq('id', dbId); } catch(e) { console.error('DB delete response failed:', e); }
 }
 
 async function dbConfirmSlot(eventId, slotId) {
-  if (!supabase || !eventId) return;
-  try { await supabase.from('events').update({ confirmed_slot_id: slotId }).eq('id', eventId); } catch(e) { console.error('DB confirm slot failed:', e); }
+  if (!_sb || !eventId) return;
+  try { await _sb.from('events').update({ confirmed_slot_id: slotId }).eq('id', eventId); } catch(e) { console.error('DB confirm slot failed:', e); }
 }
 
 
@@ -1174,7 +1174,7 @@ function vRespond() {
 }
 
 async function refreshResponses() {
-  if (!S.eventId || !supabase) { toast('DB未接続です'); return; }
+  if (!S.eventId || !_sb) { toast('DB未接続です'); return; }
   toast('🔄 最新データを取得中...');
   const resps = await dbLoadResponses(S.eventId);
   if (resps) { S.responses = resps; }
@@ -1242,7 +1242,7 @@ function render() {
 // ════════════════════════════════════════════
 async function initApp() {
   const urlEventId = getEventIdFromURL();
-  if (urlEventId && supabase) {
+  if (urlEventId && _sb) {
     const ev = await dbLoadEvent(urlEventId);
     if (ev) {
       S.eventId = ev.id;
