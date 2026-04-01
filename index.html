@@ -583,8 +583,8 @@ function removeTime(ds,val){const arr=S.dateSlots[ds]||[];arr.splice(arr.indexOf
 function setCustomFrom(ds,v){S.customFrom[ds]=v;}
 function setCustomTo(ds,v){S.customTo[ds]=v;}
 
-function createEvent() {
-  // スマホでoninputが確实に発火しないケースに備えDOM直読み
+function doCreateEvent() {
+  // スマホでoninputが確実に発火しないケースに備えDOM直読み
   const titleEl=document.getElementById('inp-title');
   if(titleEl) S.title=titleEl.value;
   if(!S.title.trim()){toast('⚠ イベント名を入力してください');return;}
@@ -855,7 +855,7 @@ function vHome() {
     </div>
     <div class="feat-grid">
       <div class="feat-card"><div class="feat-e">📆</div><div class="feat-t">カレンダー選択</div><div class="feat-d">タップで複数日をすばやく選択。コピペ不要。</div></div>
-      <div class="feat-card"><div class="feat-e">⭐</div><div class="feat-t">4段階優先度</div><div class="feat-d">◎絶対・○参加・△遅刻OK・×不可で意思表示</div></div>
+      <div class="feat-card"><div class="feat-e">⭐</div><div class="feat-t">4段階優先度</div><div class="feat-d">◎絶対ヶ○参加・△遅刻OK・×不可で意思表示</div></div>
       <div class="feat-card"><div class="feat-e">🔒</div><div class="feat-t">期限オートロック</div><div class="feat-d">期限後は自動締切。主催者へ通知して確定作業へ。</div></div>
     </div>
   </div>`;
@@ -890,12 +890,12 @@ function vCreate() {
       </p>
       <div class="form-row">
         <div class="form-group">
-          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">綠切日</label>
+          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">締切日</label>
           <input class="input" type="date" value="${S.deadlineDate}" oninput="S.deadlineDate=this.value"
             min="${toDS(_now.getFullYear(),_now.getMonth(),_now.getDate())}">
         </div>
         <div class="form-group">
-          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">綠切時刻</label>
+          <label style="font-size:12px;color:var(--text-sub);font-weight:600;display:block;margin-bottom:6px;">締切時刻</label>
           <input class="input" type="time" value="${S.deadlineTime}" oninput="S.deadlineTime=this.value">
         </div>
       </div>
@@ -911,7 +911,7 @@ function vCreate() {
       ${rTimeConfig()}
     </div>
 
-    <button class="btn btn-primary btn-full" onclick="createEvent()">リンクを生成して次へ →</button>
+    <button class="btn btn-primary btn-full" onclick="doCreateEvent()">リンクを生成して次へ →</button>
     ${!ok?`<p style="text-align:center;font-size:11px;color:var(--text-sub);margin-top:7px;">${!S.title.trim()?'イベント名':'候補日'}を入力してください</p>`:''}
   </div>`;
 }
