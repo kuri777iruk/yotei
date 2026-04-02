@@ -432,8 +432,7 @@ const TIME_PRESETS = [
   { label: '',       value: '19:0021:00' },
 ];
 
-// �h�oX� �� = 1	�on�o
-�
+// �h�oX� �� = 1	�on�o�
 // ٹ�� = �+�nL n
 // ������ = �npLD
 const MARKS = [
@@ -746,8 +745,7 @@ async function doCreateEvent() {
   // ���goninputL��kzkWjD���k�HDOM��
   const titleEl=document.getElementById('inp-title');
   if(titleEl) S.title=titleEl.value;
-  if(!S.title.trim()){toast('� ����
-�e�WfO`UD');return;}
+  if(!S.title.trim()){toast('� �����e�WfO`UD');return;}
   // ��ǣ�h:
   const btn=document.querySelector('.btn-create');
   if(btn){btn.classList.add('loading');btn.textContent='�X-...';}
@@ -803,8 +801,7 @@ function setMark(slotId,val) {
   if(S.curMarks[slotId]===val)delete S.curMarks[slotId];else S.curMarks[slotId]=val;render();
 }
 async function submitResponse() {
-  if(!S.curName.trim()){toast('J
-M�e�WfO`UD');return;}
+  if(!S.curName.trim()){toast('JM�e�WfO`UD');return;}
   const btn=document.querySelector('.btn-submit');
   if(btn){btn.classList.add('loading');btn.textContent='�-...';}
   for(const s of S.event.slots){if(!S.curMarks[s.id])S.curMarks[s.id]='�';}
@@ -916,8 +913,7 @@ function rMarkCell(slotId) {
 // PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
 function rResponseGrid() {
   const slots=S.event.slots;
-  let thead=`<tr><th class="name-col">
-M</th>${slots.map(s=>`<th class="slot-col"><div class="slot-date">${s.dateLabel}</div>${s.time?`<div class="slot-time">${s.time}</div>`:''}</th>`).join('')}</tr>`;
+  let thead=`<tr><th class="name-col">M</th>${slots.map(s=>`<th class="slot-col"><div class="slot-date">${s.dateLabel}</div>${s.time?`<div class="slot-time">${s.time}</div>`:''}</th>`).join('')}</tr>`;
   let tbody='';
   for(let i=0;i<S.responses.length;i++){
     const r=S.responses[i],isEdit=S.editIdx===i;
@@ -995,8 +991,7 @@ function rConfirmModal() {
   const slot=S.event.slots.find(s=>s.id===S.confirmModalSlotId);if(!slot)return'';
   return`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
     <div class="modal-title">=� ����W~YK</div>
-    <div class="modal-sub">�n�g��W~Y<br>�����nFH��Y�
-��WfO`UD</div>
+    <div class="modal-sub">�n�g��W~Y<br>�����nFH��Y���WfO`UD</div>
     <div class="modal-slot-box">
       <div class="modal-slot-date">${fmtDateFull(slot.date)}</div>
       <div class="modal-slot-time">${slot.time||'B�'}</div>
@@ -1048,10 +1043,8 @@ function vHome() {
       <button class="btn btn-primary" style="font-size:16px;padding:14px 34px;border-radius:16px;" onclick="go('create')">���Ȓ\� �</button>
     </div>
     <div class="feat-grid">
-      <div class="feat-card"><div class="feat-e">=�</div><div class="feat-t">�����x�</div><div class="feat-d">���gp�Yp�Ox����
-�</div></div>
-      <div class="feat-card"><div class="feat-e">P</div><div class="feat-t">4��*H�</div><div class="feat-d">�v��� ��E;OK��
-�gh:</div></div>
+      <div class="feat-card"><div class="feat-e">=�</div><div class="feat-t">�����x�</div><div class="feat-d">���gp�Yp�Ox�����</div></div>
+      <div class="feat-card"><div class="feat-e">P</div><div class="feat-t">4��*H�</div><div class="feat-d">�v��� ��E;OK���gh:</div></div>
       <div class="feat-card"><div class="feat-e">=</div><div class="feat-t">P����ï</div><div class="feat-d">P�o���;�x�Wf��\mx</div></div>
     </div>
   </div>`;
@@ -1066,8 +1059,7 @@ function vCreate() {
     <div class="card">
       <p class="section-label">�,�1</p>
       <div class="form-group">
-        <input class="input" id="inp-title" type="text" placeholder="����
-�������	"
+        <input class="input" id="inp-title" type="text" placeholder="�����������	"
           value="${esc(S.title)}" oninput="S.title=this.value" onchange="S.title=this.value">
       </div>
       <div class="form-group">
@@ -1109,8 +1101,7 @@ function vCreate() {
     </div>
 
     <button class="btn btn-primary btn-full" onclick="doCreateEvent()">��Wf!x �</button>
-    ${!ok?`<p style="text-align:center;font-size:11px;color:var(--text-sub);margin-top:7px;">${!S.title.trim()?'����
-':'��'}�e�WfO`UD</p>`:''}
+    ${!ok?`<p style="text-align:center;font-size:11px;color:var(--text-sub);margin-top:7px;">${!S.title.trim()?'����':'��'}�e�WfO`UD</p>`:''}
   </div>`;
 }
 
@@ -1235,8 +1226,7 @@ function vRespond() {
       <div class="legend">
         ${MARKS.map(mk=>`<div class="legend-item"><div class="legend-dot" style="background:${mk.color};">${mk.val}</div><span><b>${mk.val}</b> ${mk.label}</span></div>`).join('')}
       </div>
-      <p style="font-size:11px;color:var(--text-sub);margin-top:10px;">; <b>�h�oX ��
-</b>hWf�U�~Y�c_hM�ykLM_DhMkΒcfO`UD</p>
+      <p style="font-size:11px;color:var(--text-sub);margin-top:10px;">; <b>�h�oX ��</b>hWf�U�~Y�c_hM�ykLM_DhMkΒcfO`UD</p>
     </div>
 
     ${locked?`<div class="organizer-only-bar">
@@ -1245,12 +1235,10 @@ function vRespond() {
     </div>`:`<div class="card">
       <p class="section-label">${S.editIdx>=0?'�T���-':'Bj_n��e�'}</p>
       <div class="form-group">
-        <input class="input" id="inp-name" type="text" placeholder="J
-M�	"
+        <input class="input" id="inp-name" type="text" placeholder="JM�	"
           value="${S.curName}" oninput="S.curName=this.value">
       </div>
-      <p style="font-size:11px;color:var(--text-sub);margin-bottom:12px;">�n*H��x�gO`UD*x�o�
-hWfq��~Y</p>
+      <p style="font-size:11px;color:var(--text-sub);margin-bottom:12px;">�n*H��x�gO`UD*x�o�hWfq��~Y</p>
       ${rResponseGrid()}
       <div style="margin-top:14px;display:flex;gap:10px;">
         <button class="btn btn-primary btn-full" onclick="submitResponse()">${S.editIdx>=0?' ��Y�':' �TY�'}</button>
@@ -1297,13 +1285,11 @@ function vSummary() {
     ${confSlot?`<div class="confirmed-banner"><div class="confirmed-icon"></div><div><div class="confirmed-label">���</div><div class="confirmed-date">${fmtDateFull(confSlot.date)}</div>${confSlot.time?`<div class="confirmed-time">${confSlot.time}</div>`:''}<div style="font-size:11px;color:var(--text-sub);margin-top:4px;"> xn���L�U�~W_</div></div></div>`:''}
     <div class="card">
       <p style="font-size:12px;color:var(--text-sub);margin-bottom:14px;">
-        �+�nL �DLٹ��
-hWf�gϤ��U�~Ypn4o�nD�L*HU�~Y
+        �+�nL �DLٹ��hWf�gϤ��U�~Ypn4o�nD�L*HU�~Y
       </p>
       ${S.responses.length?rSummaryGrid():`<div class="empty-state">�TL~`B�~[�</div>`}
     </div>
-    ${!S.confirmedSlotId?`<p style="font-size:12px;color:var(--text-sub);text-align:center;margin-bottom:14px;">Sn�g��
-ܿ�Yh h�k���g�gM~Y</p>`:''}
+    ${!S.confirmedSlotId?`<p style="font-size:12px;color:var(--text-sub);text-align:center;margin-bottom:14px;">Sn�g��ܿ�Yh h�k���g�gM~Y</p>`:''}
     <button class="btn btn-ghost btn-full" onclick="go('respond')">� �T���x;�</button>
   </div>`;
 }
