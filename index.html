@@ -746,13 +746,13 @@ async function doCreateEvent() {
   const titleEl=document.getElementById('inp-title');
   if(titleEl) S.title=titleEl.value;
   if(!S.title.trim()){toast('⚠ イベント名を入力してください');return;}
-  // ローディング表示
-  const btn=document.querySelector('.btn-create');
-  if(btn){btn.classList.add('loading');btn.textContent='保存中...';}
   if(!S.selDates.length){toast('⚠ 候補日を1日以上選んでください');return;}
   if(S.organizerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.organizerEmail.trim())){
     toast('⚠ 主催者メールアドレスの形式が正しくありません');return;
   }
+  // ローディング表示（バリデーション通過後に設定）
+  const btn=document.querySelector('.btn-create');
+  if(btn){btn.classList.add('loading');btn.textContent='保存中...';}
   let dl = null;
   if(S.deadlineDate && S.deadlineTime) {
     dl = new Date(`${S.deadlineDate}T${S.deadlineTime}`).toISOString();
@@ -1014,7 +1014,7 @@ function rDeadlineModal() {
   if(!S.deadlineExpiredModal)return'';
   return`<div class="modal-overlay"><div class="notif-modal">
     <div class="notif-icon">📋</div>
-    <div class="notif-title">回笔期限になりました</div>
+    <div class="notif-title">回答期限になりました</div>
     <div class="notif-sub">参加者の回答が締め切られました。${S.event.organizerEmail?'<br>登録メールアドレスにも通知を送信しました。':''}<br>集計結果を確認して、日程を確定しましょう。</div>
     <div class="notif-count">${S.responses.length}人</div>
     <div class="notif-count-label">が回答しました</div>
@@ -1099,7 +1099,7 @@ function vCreate() {
       ${rTimeConfig()}
     </div>
 
-    <button class="btn btn-primary btn-full" onclick="doCreateEvent()">リンクを生成して次ほ →</button>
+    <button class="btn btn-primary btn-full btn-create" onclick="doCreateEvent()">リンクを生成して次へ →</button>
     ${!ok?`<p style="text-align:center;font-size:11px;color:var(--text-sub);margin-top:7px;">${!S.title.trim()?'イベント名':'候補日'}を入力してください</p>`:''}
   </div>`;
 }
@@ -1194,7 +1194,7 @@ function vRespond() {
         <div>
           <div class="ev-title">${esc(ev.title)}</div>
           ${ev.memo?`<div style="font-size:13px;color:var(--text-sub);margin-top:3px;">${esc(ev.memo)}</div>`:''}
-          <div style="font-size:11px;color:var(--text-sub);margin-top:6px;">${ev.slots.length}候補 · ${S.responses.length}人回笔済み</div>
+          <div style="font-size:11px;color:var(--text-sub);margin-top:6px;">${ev.slots.length}候補 · ${S.responses.length}人回答済み</div>
         </div>
       </div>
       <div class="divider"></div>
