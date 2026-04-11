@@ -1,7 +1,7 @@
 // Vercel Serverless Function: 主催者への期限通知メール送信
 // 環境変数: RESEND_API_KEY（Vercel Dashboard > Settings > Environment Variables で設定）
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_API_KEY) {
     console.error('RESEND_API_KEY is not set');
-    return res.status(500).json({ error: 'Email service not configured' });
+    return res.status(500).json({ error: 'Email service not configured. Set RESEND_API_KEY in Vercel environment variables.' });
   }
 
   const htmlBody = `
@@ -78,4 +78,4 @@ export default async function handler(req, res) {
     console.error('Email send error:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
-}
+};
